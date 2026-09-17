@@ -193,3 +193,14 @@ Local dev database: `podman run -d -p 27017:27017 docker.io/library/mongo:8`.
 ## 11. Out of scope for v1
 
 Payments, brackets, results and leaderboards, waitlist, email verification, team-invite links (the captain enters the whole roster), image uploads (glyph + colour is the art), in-panel admin management, notifications beyond the reset email, multiple languages.
+
+## 12. What changed during the build
+
+- **Stages replaced fixed anchors.** The swarm is positioned by `<SceneStage />` elements in the page layout (sticky right column on desktop, a block above the content on phones) instead of hard-coded offsets. Phones get a swipe carousel of games under a stage, so the focused card becomes the swarm.
+- **Primary buttons use the page accent**, which is `--volt` on hub pages and the game's hue inside a game's colour world, rather than `--volt` everywhere.
+- **No scroll parallax and no scroll listener.** The frame loop reads the active stage's box, which already tracks scrolling.
+- **Reduced motion keeps the frame loop** with motion at zero and values snapped, so the swarm still stays attached to its stage while scrolling.
+- **Tailwind sources are explicit** (`source(none)` + `@source`) because Turbopack never invalidated CSS for files inside bracketed route folders.
+- React is 19.2.8 as pinned by create-next-app, so R3F would have installed; plain three.js was kept because the scene is one `THREE.Points` object.
+- A full or closed game's `/register` page and `/admin` for outsiders answer HTTP 200 with the redirect or not-found page in the body, because `loading.tsx` starts streaming before the check runs. No protected content is rendered either way.
+
