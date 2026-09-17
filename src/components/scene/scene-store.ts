@@ -1,7 +1,7 @@
 import type { Glyph } from '@/lib/schemas'
 
-export type Shape = 'trophy' | 'field' | 'slots' | 'check' | Glyph
-export type Target = { shape: Shape; hue: number | null; slots?: { taken: number; max: number }; burst?: boolean }
+export type Shape = 'trophy' | 'field' | 'teams' | 'check' | Glyph
+export type Target = { shape: Shape; hue: number | null; teams?: number; burst?: boolean }
 
 // Module-level store: the swarm is imperative and lives outside React, so React state would only get in the way.
 // Precedence: hover/in-view override > the active stage's own target > the page's base target.

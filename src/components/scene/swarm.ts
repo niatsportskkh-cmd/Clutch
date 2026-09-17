@@ -128,7 +128,7 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
     else oklch(0.78, 0.17, t.hue, goalColor)
     goalOpacity = t.shape === 'field' ? 0.22 : 0.85
 
-    const key = `${t.shape}:${t.slots?.taken}/${t.slots?.max}`
+    const key = `${t.shape}:${t.teams}`
     if (key === shapeKey && !t.burst) return // same shape: only the colour moves
     shapeKey = key
     // bake where every particle is right now into aFrom, so interrupting a morph never pops

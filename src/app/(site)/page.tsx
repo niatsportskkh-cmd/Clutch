@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { getUser } from '@/lib/auth'
-import { listOpen, toView } from '@/lib/tournaments'
+import { listOpen, toView, countTeams } from '@/lib/tournaments'
+import { listBranches } from '@/lib/branches'
 import { AutoRefresh } from '@/components/AutoRefresh'
 import { Button } from '@/components/Button'
 import { Countdown } from '@/components/Countdown'
@@ -10,16 +11,22 @@ import { SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
 export const dynamic = 'force-dynamic'
 
 const STEPS = [
-  ['Make an account', 'Name, email and a WhatsApp number. It takes a minute.'],
-  ['Pick a game and add your roster', 'Solo or squad. The captain enters every player and their in-game ID.'],
+  ['Make an account', 'Your college ID and the mobile number your college has for it. Both have to match the student list.'],
+  ['Pick a contest and add your team', 'The captain types each player\u2019s college ID; names and numbers come from the student list.'],
   ['Get the room ID here', 'Before the match starts, the room ID and password appear on your game page.'],
 ]
 
 export default async function Home() {
-  const [user, open] = await Promise.all([getUser(), listOpen()])
-  const games = open.map(t => toView(t))
+  const user = await getUser()
+  // signed in: only the contests their college was invited to. Signed out: the public list.
+  const open = await listOpen(user?.branch ?? null)
+  const [counts, colleges] = await Promise.all([countTeams(open.map(t => t._id)), listBranches()])
+  const locationOf = new Map(colleges.map(b => [b.name, b.location]))
+  const games = open.map(t =>
+    toView(t, counts.get(t._id.toHexString()) ?? 0, [...new Set(t.branches.map(b => locationOf.get(b)).filter(Boolean) as string[])]),
+  )
   const next = games[0]
-  const slotsLeft = games.reduce((n, g) => n + Math.max(0, g.maxSlots - g.slotsTaken), 0)
+  const teamsIn = games.reduce((n, g) => n + g.teams, 0)
 
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
@@ -51,12 +58,16 @@ export default async function Home() {
           {games.length ? (
             <>
               <p className="num mt-3 mb-6 text-muted">
-                {games.length} {games.length === 1 ? 'game' : 'games'} open, {slotsLeft} slots left. Entry is free for all of them.
+                {games.length} {games.length === 1 ? 'game' : 'games'} open, {teamsIn} {teamsIn === 1 ? 'team' : 'teams'} in so far. Entry is free, and there is no cap on teams.
               </p>
               <GameList games={games} />
             </>
           ) : (
-            <p className="mt-4 max-w-[48ch] text-lg text-muted">No games are open right now. New matches show up here as soon as they are announced.</p>
+            <p className="mt-4 max-w-[48ch] text-lg text-muted">
+              {user?.branch
+                ? `Nothing open for ${user.branch} right now. Contests show up here as soon as they are announced for your college.`
+                : 'No games are open right now. New matches show up here as soon as they are announced.'}
+            </p>
           )}
         </section>
 

@@ -2,13 +2,12 @@
 import { useEffect, useMemo, useRef, type FocusEvent, type PointerEvent, type ReactNode } from 'react'
 import { addStage, setBase, setOverride, type Shape, type Target } from './scene-store'
 
-type Props = { shape: Shape; hue: number | null; taken?: number; max?: number; burst?: boolean }
-const toTarget = ({ shape, hue, taken, max, burst }: Props): Target =>
-  ({ shape, hue, burst, slots: max ? { taken: taken ?? 0, max } : undefined })
+type Props = { shape: Shape; hue: number | null; teams?: number; burst?: boolean }
+const toTarget = ({ shape, hue, teams, burst }: Props): Target => ({ shape, hue, burst, teams })
 
 /** Declares the page's resting swarm target. Props are primitives so the effect only fires on real changes. */
 export function SceneTarget(p: Props) {
-  useEffect(() => { setBase(toTarget(p)) }, [p.shape, p.hue, p.taken, p.max, p.burst]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setBase(toTarget(p)) }, [p.shape, p.hue, p.teams, p.burst]) // eslint-disable-line react-hooks/exhaustive-deps
   return null
 }
 
@@ -20,7 +19,7 @@ export function SceneStage({ className, ...p }: Partial<Props> & { className?: s
   const ref = useRef<HTMLDivElement>(null)
   useEffect(
     () => addStage(ref.current!, p.shape ? toTarget(p as Props) : null),
-    [p.shape, p.hue, p.taken, p.max], // eslint-disable-line react-hooks/exhaustive-deps
+    [p.shape, p.hue, p.teams], // eslint-disable-line react-hooks/exhaustive-deps
   )
   return <div ref={ref} aria-hidden className={`stage ${className ?? ''}`} />
 }
@@ -34,7 +33,7 @@ export function SceneFocus({ children, className, ...p }: Props & { children: Re
     const io = new IntersectionObserver(([e]) => setOverride(e.isIntersecting ? toTarget(p) : null, owner), { rootMargin: '-35% 0px -35% 0px' })
     io.observe(ref.current!)
     return () => { io.disconnect(); setOverride(null, owner) }
-  }, [p.shape, p.hue, p.taken, p.max]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [p.shape, p.hue, p.teams]) // eslint-disable-line react-hooks/exhaustive-deps
   return <div ref={ref} className={className}>{children}</div>
 }
 

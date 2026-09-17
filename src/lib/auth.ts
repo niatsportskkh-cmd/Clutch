@@ -3,21 +3,10 @@ import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { nextCookies } from 'better-auth/next-js'
 import { APIError } from 'better-auth/api'
 import { headers } from 'next/headers'
-import { Resend } from 'resend'
-import { db } from './db.ts'
-import { phoneSchema } from './schemas.ts'
-
-async function sendMail(to: string, subject: string, text: string) {
-  if (!process.env.RESEND_API_KEY) {
-    if (process.env.NODE_ENV === 'production') throw new Error('Missing env var RESEND_API_KEY')
-    console.log(`[dev mail] to ${to}: ${subject}\n${text}`)
-    return
-  }
-  const { error } = await new Resend(process.env.RESEND_API_KEY).emails.send({
-    from: process.env.EMAIL_FROM!, to, subject, text,
-  })
-  if (error) throw new Error(`Resend: ${error.message}`)
-}
+import { db, ensureIndexes } from './db.ts'
+import { sendMail } from './mail.ts'
+import { collegeIdSchema, phoneSchema } from './schemas.ts'
+import { findStudent } from './students.ts'
 
 export const auth = betterAuth({
   // no `client` option: transactions stay off, so a standalone local Mongo works
@@ -28,20 +17,42 @@ export const auth = betterAuth({
     sendResetPassword: ({ user, url }) =>
       sendMail(user.email, 'Reset your Clutch password', `Reset your password with this link. It expires in 1 hour.\n\n${url}`),
   },
-  emailVerification: {
-    sendOnSignUp: true, // players may ignore it; only admin access requires a verified email
-    autoSignInAfterVerification: true,
-    sendVerificationEmail: ({ user, url }) =>
-      sendMail(user.email, 'Verify your Clutch email', `Confirm this is your email address:\n\n${url}`),
+  // No emailVerification block: admin access is a role on the user document, so a verified
+  // address gates nothing and the extra mail only trained people to ignore it.
+  user: {
+    additionalFields: {
+      phone: { type: 'string', required: true },
+      collegeId: { type: 'string', required: true },
+      // Copied off the roster row, never typed: a student cannot put themselves in another branch.
+      branch: { type: 'string', required: false, input: false },
+      // `input: false` is the whole guard here: without it a sign-up POST could carry role: 'admin'.
+      role: { type: 'string', required: false, defaultValue: 'user', input: false },
+    },
   },
-  user: { additionalFields: { phone: { type: 'string', required: true } } },
   databaseHooks: {
     user: {
       create: {
+        // The gate: an account exists only for someone already on the student roster, matched on
+        // BOTH mobile and college ID. Runs inside better-auth so every sign-up route goes through it,
+        // not just our form.
         before: async user => {
-          const phone = phoneSchema.safeParse((user as { phone?: unknown }).phone)
-          if (!phone.success) throw new APIError('BAD_REQUEST', { message: 'Enter a valid phone number' })
-          return { data: { ...user, phone: phone.data } }
+          const raw = user as { phone?: unknown; collegeId?: unknown }
+          const phone = phoneSchema.safeParse(raw.phone)
+          if (!phone.success) throw new APIError('BAD_REQUEST', { message: 'Enter a valid mobile number' })
+          const collegeId = collegeIdSchema.safeParse(raw.collegeId)
+          if (!collegeId.success) throw new APIError('BAD_REQUEST', { message: 'Enter a valid college ID' })
+
+          await ensureIndexes() // the unique index below is the race backstop for the check after it
+          const student = await findStudent(collegeId.data, phone.data)
+          if (!student) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'That college ID and mobile number are not on the student list together. Check both, or ask the organisers to add you.',
+            })
+          }
+          if (await db.collection('user').findOne({ collegeId: collegeId.data })) {
+            throw new APIError('BAD_REQUEST', { message: 'An account already exists for this college ID. Log in instead, or reset the password.' })
+          }
+          return { data: { ...user, phone: phone.data, collegeId: collegeId.data, branch: student.branch } }
         },
       },
     },

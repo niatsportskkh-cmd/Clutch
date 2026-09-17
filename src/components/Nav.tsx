@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getUser } from '@/lib/auth'
-import { isAdmin } from '@/lib/admin'
+import { isAdmin } from '@/lib/users'
 import { SignOutButton } from './SignOutButton'
 
 const item = 'whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium text-muted transition-colors duration-300 hover:bg-white/[0.07] hover:text-text'

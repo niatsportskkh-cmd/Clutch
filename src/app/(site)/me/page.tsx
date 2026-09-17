@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
 import { formatIst } from '@/lib/time'
-import { listMine } from '@/lib/tournaments'
+import { listMine, isRegOpen } from '@/lib/tournaments'
 import { AutoRefresh } from '@/components/AutoRefresh'
 import { Button } from '@/components/Button'
 import { ConfirmButton } from '@/components/ConfirmButton'
@@ -20,7 +20,8 @@ export const metadata = { title: 'My games' }
 export default async function MePage() {
   const user = await getUser()
   if (!user) redirect('/login?next=/me')
-  const mine = await listMine(user.id)
+  // matched on college ID, not on who filled the form: everyone on a team sees it here
+  const mine = user.collegeId ? await listMine(user.collegeId) : []
   const now = new Date()
 
   return (
@@ -30,7 +31,7 @@ export default async function MePage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="display text-4xl sm:text-5xl">My games</h1>
-          <p className="mt-2 text-muted">Signed in as {user.email}</p>
+          <p className="mt-2 text-muted">Signed in as {user.email}{user.branch && <> · {user.branch}</>}</p>
         </div>
         {/* the nav drops Sign out on phones to stay on one row, so it lives here instead */}
         <SignOutButton className="inline-flex h-11 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold text-muted ring-1 ring-inset ring-white/15 transition-colors duration-300 hover:text-text sm:hidden" />
@@ -43,7 +44,10 @@ export default async function MePage() {
         </Panel>
       )}
 
-      {mine.map(({ reg, t }) => (
+      {mine.map(({ team: reg, t }) => {
+        const captain = reg.captainId === user.id
+        const open = isRegOpen(t, now)
+        return (
         <article key={reg._id.toHexString()} className="hue flex flex-col gap-3" style={{ '--hue': t.hue } as CSSProperties}>
           <Panel inner="flex flex-col gap-5 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
@@ -59,25 +63,36 @@ export default async function MePage() {
               </div>
             </div>
             <div>
-              {reg.teamName && <p className="mb-2 font-semibold text-text">{reg.teamName}</p>}
+              <p className="mb-2 font-semibold text-text">
+                {reg.teamName}
+                <span className="ml-2 text-sm font-normal text-muted">{reg.branch}, {reg.location}</span>
+                {!captain && <span className="ml-2 text-sm font-normal text-muted">· added by your captain</span>}
+              </p>
               <ul className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                {reg.players.map((p, i) => (
-                  <li key={i} className="flex justify-between gap-3 border-b border-line/60 py-1.5 last:border-0 sm:[&:nth-last-child(2)]:border-0">
-                    <span className="text-text">{p.name}</span><span className="font-mono text-muted">{p.inGameId}</span>
+                {reg.players.map(p => (
+                  <li key={p.collegeId} className="flex justify-between gap-3 border-b border-line/60 py-1.5 last:border-0 sm:[&:nth-last-child(2)]:border-0">
+                    <span className="text-text">{p.name}{p.collegeId === reg.captainCollegeId && <span className="ml-2 text-xs text-accent">captain</span>}</span>
+                    <span className="font-mono text-muted">{t.requireInGameId && p.inGameId ? p.inGameId : p.collegeId}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            {now < t.regClosesAt && (
-              <form action={cancelAction} className="self-start">
-                <input type="hidden" name="id" value={reg._id.toHexString()} />
-                <ConfirmButton variant="danger" message={`Cancel your registration for ${t.title}? Your slot goes back to the pool.`}>Cancel registration</ConfirmButton>
-              </form>
+            {/* only the captain edits or withdraws; members see the team and take it up with them */}
+            {captain && open && (
+              <div className="flex flex-wrap gap-2 self-start">
+                <Button href={`/games/${t.slug}/register?edit=1`} variant="secondary" className="min-h-10 px-4 text-sm">Edit team</Button>
+                <form action={cancelAction}>
+                  <input type="hidden" name="id" value={reg._id.toHexString()} />
+                  <ConfirmButton variant="danger" className="min-h-10 px-4 text-sm" message={`Withdraw ${reg.teamName} from ${t.title}? Everyone on it is free to join another team.`}>Withdraw</ConfirmButton>
+                </form>
+              </div>
             )}
+            {!captain && open && <p className="text-sm text-muted">Only {reg.players.find(p => p.collegeId === reg.captainCollegeId)?.name ?? 'the captain'} can change this team.</p>}
           </Panel>
           <RoomPanel room={t.room} />
         </article>
-      ))}
+        )
+      })}
     </div>
   )
 }
