@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useRef, type FocusEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, type FocusEvent, type PointerEvent, type ReactNode } from 'react'
 import { addStage, setBase, setOverride, type Shape, type Target } from './scene-store'
 
 type Props = { shape: Shape; hue: number | null; taken?: number; max?: number; burst?: boolean }
@@ -22,7 +22,20 @@ export function SceneStage({ className, ...p }: Partial<Props> & { className?: s
     () => addStage(ref.current!, p.shape ? toTarget(p as Props) : null),
     [p.shape, p.hue, p.taken, p.max], // eslint-disable-line react-hooks/exhaustive-deps
   )
-  return <div ref={ref} aria-hidden className={className} />
+  return <div ref={ref} aria-hidden className={`stage ${className ?? ''}`} />
+}
+
+/** While this block is in the middle of the screen, the swarm shows its target instead of the page's (e.g. the live slot ring). */
+export function SceneFocus({ children, className, ...p }: Props & { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const owner = {}
+    // active only while the block crosses the middle third of the viewport, so it never fires just because it fits on screen at load
+    const io = new IntersectionObserver(([e]) => setOverride(e.isIntersecting ? toTarget(p) : null, owner), { rootMargin: '-35% 0px -35% 0px' })
+    io.observe(ref.current!)
+    return () => { io.disconnect(); setOverride(null, owner) }
+  }, [p.shape, p.hue, p.taken, p.max]) // eslint-disable-line react-hooks/exhaustive-deps
+  return <div ref={ref} className={className}>{children}</div>
 }
 
 /**

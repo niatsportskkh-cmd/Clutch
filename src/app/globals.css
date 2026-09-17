@@ -1,4 +1,8 @@
-@import "tailwindcss";
+/* Sources are listed by hand on purpose. Tailwind's automatic detection registers one watch glob per folder, and
+   Turbopack reads the brackets in route folders like [slug] as a glob character class, so edits inside them never
+   invalidated this file's cached output: new classes silently did not exist in dev. A bracket-free glob fixes it. */
+@import "tailwindcss" source(none);
+@source "../**/*.{ts,tsx}";
 
 /* Voltage: ink base, acid-lime primary, one accent hue per game.
    Shape rule: buttons are pills, panels are 28px (22px inner), inputs are 12px. Nothing else. */
@@ -69,10 +73,12 @@ body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
 @keyframes rise { from { opacity: 0; transform: translateY(28px); filter: blur(6px); } }
 @keyframes row-in { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
 
+/* Fill mode is `backwards`, never `both`: an element whose transform animation is still filling becomes the
+   containing block for position:fixed descendants and a stacking context, forever. */
 @media (prefers-reduced-motion: no-preference) {
-  .page-in { animation: page-in 0.45s var(--spring) both; }
-  .rise > * { animation: rise 0.9s var(--spring) both; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
-  .stagger > * { animation: rise 0.6s var(--spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  .page-in { animation: page-in 0.45s var(--spring) backwards; }
+  .rise > * { animation: rise 0.9s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
+  .stagger > * { animation: rise 0.6s var(--spring) backwards; animation-delay: calc(var(--i, 0) * 70ms); }
   /* rows reveal as they scroll into view; browsers without scroll-driven animations just show them */
   @supports (animation-timeline: view()) {
     .row-in { animation: row-in linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
@@ -87,6 +93,9 @@ body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
   opacity: 0; transition: opacity 0.5s var(--spring);
 }
 @media (hover: hover) { .spot:hover::before { opacity: 1; } }
+
+/* The glow lives on the stage, so it sits behind the swarm at every breakpoint and fades out before any edge. */
+.stage { background: radial-gradient(closest-side, color-mix(in oklch, var(--accent) 13%, transparent), transparent); }
 
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
