@@ -1,8 +1,9 @@
 import { MongoClient, type Db } from 'mongodb'
 
-const uri = process.env.MONGODB_URI ?? '' // `?? ''` keeps it a plain string for the closure below
-if (!uri) throw new Error('Missing env var MONGODB_URI')
-
+// Checked when a client is first asked for, never at import. `next build` evaluates every module to
+// collect page data, on a machine that has no database secret, so throwing up here fails the build
+// on a page that never touches Mongo. Read at call time too: a serverless runtime can populate the
+// environment after the module is loaded.
 // cached on globalThis so dev HMR and warm Vercel lambdas reuse one pool
 const g = globalThis as unknown as { _mongo?: MongoClient; _indexes?: Promise<void> }
 
@@ -18,6 +19,8 @@ const dead = (c: MongoClient) => {
 
 export function getClient() {
   if (!g._mongo || dead(g._mongo)) {
+    const uri = process.env.MONGODB_URI
+    if (!uri) throw new Error('Missing env var MONGODB_URI')
     g._mongo = new MongoClient(uri)
     g._indexes = undefined // a new pool has not run them yet
   }

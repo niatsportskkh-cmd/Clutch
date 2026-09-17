@@ -6,10 +6,11 @@ import { db } from './db.ts'
  * empty database, so there is a way into /admin before any college or student has been loaded.
  * It is not a student: it has no college, so it can run the panel but cannot register for a contest.
  */
-export async function ensureAdmin() {
+async function run() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase()
   const password = process.env.ADMIN_PASSWORD
-  if (!email || !password) return
+  // Said out loud: silence here is indistinguishable from the code never having run.
+  if (!email || !password) return console.log('[clutch] ADMIN_EMAIL/ADMIN_PASSWORD not set, no break-glass admin')
 
   const existing = await db.collection('user').findOne({ email })
   if (existing) {
@@ -26,4 +27,19 @@ export async function ensureAdmin() {
   await asBootstrap(() => auth.api.signUpEmail({ body: { name: 'Admin', email, password, phone: '0000000000', collegeId: 'ENVADMIN' } }))
   await db.collection('user').updateOne({ email }, { $set: { role: 'admin' }, $unset: { collegeId: '', branch: '' } })
   console.log(`[clutch] created admin ${email} from ADMIN_EMAIL`)
+}
+
+let inflight: Promise<void> | null = null
+
+/**
+ * Runs at most once per server instance, from instrumentation at boot AND from the login page.
+ * Serverless is the reason for the second caller: a platform that does not run the startup hook the
+ * way a long-lived server does would otherwise leave no way in at all. A failure clears the latch so
+ * the next request retries, rather than one unreachable database meaning no admin until a redeploy.
+ */
+export function ensureAdmin() {
+  return (inflight ??= run().catch(e => {
+    inflight = null
+    console.error('[clutch] admin bootstrap failed:', e instanceof Error ? e.message : e)
+  }))
 }
