@@ -25,12 +25,12 @@ Rejected earlier and must not return: literal weapon models, the matte silver th
 ## 3. Stack
 
 - Next.js (latest, App Router, TypeScript, `src/` dir), Tailwind CSS v4.
-- `three`, `@react-three/fiber`, `@react-three/drei`. No postprocessing package: additive soft points glow on a dark base without bloom. Add bloom only if screenshots show it is needed.
+- Plain `three` driven from one client component. **No React Three Fiber or drei:** R3F 9.7 requires `react < 19.3` and Next 16 ships React 19.3, and the scene is a single `THREE.Points` object, so a reconciler adds nothing. No postprocessing: additive soft points glow on a dark base without bloom. Add bloom only if screenshots show it is needed.
 - `mongodb` official driver. No Mongoose. `zod` validates every server action input.
 - `better-auth` with its MongoDB adapter: email + password, sessions, reset tokens, built-in rate limiting on auth endpoints. Chosen over hand-rolled auth because password hashing, session and reset-token code is a trust boundary.
 - `resend` for the reset email. In dev without `RESEND_API_KEY`, the reset URL is logged to the server console instead.
 - Mutations are Server Actions. The only route handlers are better-auth's catch-all and the CSV export.
-- No state library, no animation library, no date library, no CSV library, no markdown library. Use React context + `useSyncExternalStore`, CSS + View Transitions, `Intl.DateTimeFormat`, and hand-written CSV.
+- No state library, no animation library, no date library, no CSV library, no markdown library. Use React context + `useSyncExternalStore`, CSS animations, `Intl.DateTimeFormat`, and hand-written CSV.
 
 ## 4. Data model
 
@@ -41,7 +41,7 @@ _id, slug (unique), game: 'bgmi'|'freefire'|'valorant'|'codm'|'custom',
 gameName: string          // "BGMI"; typed by admin when game = custom
 title: string             // "Friday Night Scrims"
 mode: string              // "Squad TPP, Erangel" (free text, optional)
-glyph: 'drop'|'flame'|'spike'|'tags'|'crest'
+glyph: 'drop'|'flame'|'spike'|'rank'|'crest'
 hue: number 0..360        // accent = oklch(0.78 0.17 hue); preset prefills, admin can change
 startsAt: Date (UTC), regClosesAt: Date (UTC, defaults to startsAt)
 teamSize: int 1..10, maxSlots: int 1..1000, slotsTaken: int
@@ -62,7 +62,7 @@ Edit rules: `maxSlots` cannot go below `slotsTaken`. `teamSize` cannot change on
 _id, tournamentId, userId, code: 'CL-XXXXXX',
 teamName: string | null   // required when teamSize > 1
 players: [{ name, inGameId }]   // length === teamSize; index 0 is the captain
-phone: string             // copied from user at registration time
+phone, email: string     // copied from the user at registration time, so the admin table and CSV need no join
 status: 'confirmed'|'cancelled', createdAt
 ```
 
@@ -80,7 +80,7 @@ Managed by better-auth. One additional required field: `phone` (WhatsApp number 
 2. `findOneAndUpdate` on the tournament with filter `status: 'open'`, `regClosesAt > now`, `$expr: slotsTaken < maxSlots`, update `$inc: { slotsTaken: 1 }`. No match means closed or full.
 3. Insert the registration. On duplicate key (already registered) or any other error, `$inc: { slotsTaken: -1 }` and return the error.
 
-No transactions needed, so it works on standalone local Mongo and on Atlas. Known ceiling: a crash between steps 2 and 3 leaks one slot. The admin game page reconciles `slotsTaken` with the real confirmed count on load.
+No transactions needed, so it works on standalone local Mongo and on Atlas. Known ceiling: a crash between steps 2 and 3 leaks one slot. The admin game page has a **Recount slots** button that sets `slotsTaken` to the real confirmed count. It is a button, not an on-load repair, because recounting while a claim is between steps 2 and 3 would undercount.
 
 Cancel: atomically flip the registration `confirmed -> cancelled`; only if that modified a document, `$inc: { slotsTaken: -1 }`. Allowed until `regClosesAt`.
 
@@ -101,7 +101,7 @@ Stored in UTC. Admin enters `datetime-local` values interpreted as IST (fixed `+
 | `/admin/games/new`, `/admin/games/[id]` | Create/edit form (preset picker prefills gameName, glyph, hue, teamSize). Room ID/password publish form. Registrations table with team, players, in-game IDs, phone, email. Remove a registration. CSV export |
 | `not-found`, `error`, `loading` | Styled states |
 
-Admin guard: `isAdmin(email)` checks the lowercased email against `ADMIN_EMAILS`. It is enforced in the admin layout **and** inside every admin server action and the export route, never only in routing.
+Admin guard: `isAdmin(user)` requires the lowercased email to be in `ADMIN_EMAILS` **and** `user.emailVerified === true`. Without the second condition anyone could sign up with the owner's address first and become admin, because players are never forced to verify. A verification email is sent on every signup (players can ignore it); an unverified admin-listed account sees a "verify your email to unlock admin" notice with a resend button. It is enforced in the admin layout **and** inside every admin server action and the export route, never only in routing.
 
 CSV export escapes quotes and prefixes cells starting with `= + - @` with `'` to block spreadsheet formula injection.
 
@@ -132,14 +132,14 @@ Before building UI, load the design skills the user asked for (`design-taste-fro
 
 ## 7. 3D: the swarm
 
-One `<Canvas>` mounted once in the root layout, fixed behind the content, `aria-hidden`, never remounted on navigation. It renders a single `THREE.Points` (one draw call) with a custom shader.
+One `<canvas>` mounted once in the root layout, fixed behind the content, `aria-hidden`, never remounted on navigation. `three` is loaded with a dynamic `import()` inside `useEffect` so it stays off the critical path. It renders a single `THREE.Points` (one draw call) with a custom shader.
 
 **Shapes** (point clouds, generated once and cached):
 
 | Shape | Source | Shown when |
 |---|---|---|
 | `trophy` | Surface-sampled `LatheGeometry`, true 3D, slowly rotating | Home hero |
-| `drop`, `flame`, `spike`, `tags`, `crest` | SVG path drawn to an offscreen 2D canvas, points sampled where alpha > 0, given shallow depth | Game card in focus, game page. Abstract marks, **not** official game logos |
+| `drop`, `flame`, `spike`, `rank`, `crest` | SVG path drawn to an offscreen 2D canvas, points sampled where alpha > 0, given shallow depth | Game card in focus, game page. Abstract marks, **not** official game logos |
 | `slots` | Computed ring of `maxSlots` segments: taken segments dense and bright, free segments sparse. Above 64 slots it becomes a continuous arc gauge | Game page slot section, register page |
 | `check` | Canvas-sampled tick | Registration success, after a radial burst |
 | `field` | Loose drifting cloud | Auth, `/me`, admin (calm background) |
@@ -152,9 +152,9 @@ The same SVG path data renders the DOM icon on cards, so glyphs are defined once
 
 **Control surface:** a tiny scene store (`setTarget({ shape, hue, slots? })`) exposed by context. Pages declare their target with a `<SceneTarget />` client component; cards call it on hover/focus.
 
-**Performance budget:** 40k points desktop, 12k on coarse-pointer / small screens; DPR capped at 2 desktop and 1.5 mobile; drei `PerformanceMonitor` halves the count if fps drops; render loop pauses when the tab is hidden. `prefers-reduced-motion`: shapes snap without flight, no pointer push, no rotation. If WebGL is unavailable the site works fully with a CSS gradient background.
+**Performance budget:** 40k points desktop, 12k on coarse-pointer / small screens; DPR capped at 2 desktop and 1.5 mobile; if the first ~90 frames average over 24 ms the draw range is halved (point order is random, so any prefix is a uniform subsample); render loop pauses when the tab is hidden. `prefers-reduced-motion`: shapes snap without flight, no pointer push, no rotation. If WebGL is unavailable the site works fully with a CSS gradient background.
 
-**Other interactivity (DOM):** card tilt on pointer devices and press-scale on touch, live countdowns, animated slot meters, View Transitions between pages as progressive enhancement, player rows that reveal in sequence on the register form, inline validation.
+**Other interactivity (DOM):** card tilt on pointer devices and press-scale on touch, live countdowns, animated slot meters, page enter transitions (`app/template.tsx` remounts per navigation and replays a CSS animation), player rows that reveal in sequence on the register form, inline validation.
 
 ## 8. Project layout
 
@@ -163,11 +163,11 @@ src/app/(site)/            page.tsx, games/[slug]/page.tsx, games/[slug]/registe
 src/app/(auth)/            login, signup, forgot-password, reset-password
 src/app/admin/             layout.tsx (guard), page.tsx, games/new, games/[id], games/[id]/export/route.ts
 src/app/api/auth/[...all]/route.ts
-src/lib/                   db.ts, auth.ts, auth-client.ts, admin.ts, tournaments.ts (queries, claimSlot, cancel),
-                           schemas.ts (zod), time.ts, games.ts (presets + glyph paths)
-src/components/scene/      SceneCanvas, Swarm, shapes.ts, scene-store.tsx, SceneTarget
+src/lib/                   db.ts, auth.ts, auth-client.ts, admin.ts, tournaments.ts (queries, claimSlot, cancel, save),
+                           schemas.ts (zod), time.ts, csv.ts, games.ts (presets + glyph paths)
+src/components/scene/      SceneCanvas.tsx, swarm.ts, shapes.ts, scene-store.ts, SceneTarget.tsx (SceneTarget + SceneZone)
 src/components/            GameCard, SlotMeter, Countdown, forms, nav
-scripts/seed.mjs           four sample tournaments with future dates
+scripts/seed.ts            four sample tournaments with future dates
 scripts/shots.mjs          headless Chrome (CDP) screenshots at 1440x900 and 390x844
 test/claim.test.ts         node:test against local Mongo
 ```
