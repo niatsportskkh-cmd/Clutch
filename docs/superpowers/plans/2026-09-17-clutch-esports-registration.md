@@ -88,7 +88,7 @@ npm i three mongodb better-auth zod resend && npm i -D @types/three
 - [ ] **Step 5: Env files.** `.env.example` (committed) and `.env.local` (ignored; secret from `openssl rand -base64 32`):
 
 ```
-MONGODB_URI=mongodb://localhost:27017/clutch
+MONGODB_URI=mongodb://127.0.0.1:27017/clutch
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://localhost:3000
 RESEND_API_KEY=
