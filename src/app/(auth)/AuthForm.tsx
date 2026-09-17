@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
 import { authClient } from '@/lib/auth-client'
 import { safeNext } from '@/lib/safe-next'
-import { ensureEnvAdmin, hasAccount } from './actions'
+import { hasAccount } from './actions'
 import { Button } from '@/components/Button'
 import { Field } from '@/components/Field'
 import { Panel } from '@/components/Panel'
@@ -36,15 +36,8 @@ export function AuthForm({ mode, next, token }: { mode: Mode; next?: string; tok
       setBusy(false)
       return setError(noAccount)
     }
-    // The break-glass admin is created the first time its env credentials are actually used, so a
-    // brand-new database has a way in without anyone being on the student roster yet.
-    const envAdmin =
-      (mode === 'login' || mode === 'signup') &&
-      (await ensureEnvAdmin(f.email, f.password, { name: f.name, phone: f.phone }))
-
     const res =
-      envAdmin ? await authClient.signIn.email({ email: f.email, password: f.password })
-      : mode === 'login' ? await authClient.signIn.email({ email: f.email, password: f.password })
+      mode === 'login' ? await authClient.signIn.email({ email: f.email, password: f.password })
       : mode === 'signup' ? await authClient.signUp.email({ name: f.name, email: f.email, phone: f.phone, collegeId: f.collegeId, password: f.password })
       : mode === 'forgot' ? await authClient.requestPasswordReset({ email: f.email, redirectTo: '/reset-password' })
       : await authClient.resetPassword({ newPassword: f.password, token: token ?? '' })

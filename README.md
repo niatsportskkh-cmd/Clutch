@@ -50,9 +50,9 @@ If someone's number has changed since the sheet was made, edit their row at `/ad
 
 On a fresh database nobody can sign up, because the student list is empty and the list is the gate. Two ways in:
 
-**Break-glass admin.** Put `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the environment, then just log in with them. The account is created the first time those exact credentials are submitted to the login or sign-up form, with the admin role and no student-roster row — so it works on a completely empty database. Sign-up also keeps the name and mobile you type. It has no college, so it runs `/admin` but cannot register for a contest, and cannot be added to a team.
+**From the environment (how a fresh deployment gets its first admin).** Set `ADMIN_EMAIL` and `ADMIN_PASSWORD`, optionally `ADMIN_NAME`, `ADMIN_PHONE` and `ADMIN_COLLEGE_ID` — the whole sign-up form. When the server starts, that account is created with the admin role, skipping the student-list check. Then just log in with it.
 
-Both halves must match, so a wrong password against that address creates nothing and fails like any other login. Once the account exists the env vars stop being the source of truth: changing `ADMIN_PASSWORD` does not change the account's password, and clearing both leaves the account working.
+It gets no college, so it runs `/admin` but can never be registered for a contest or put on a team. Restarting never duplicates it: if the account exists it is left alone, and only promoted if its role was wrong. The password is never rewritten, so changing `ADMIN_PASSWORD` later does not change the account's — and clearing the variables leaves the account working.
 
 **Or promote an existing account.**
 
@@ -68,7 +68,7 @@ That is only needed once. After it, `/admin` → **Admins** promotes anyone else
 | `MONGODB_URI` | Atlas connection string ending in `/clutch`. In Atlas, Network Access must allow `0.0.0.0/0` (Vercel has no fixed IPs) |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | The production URL, no trailing slash |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The first way in. Use a long password: this account can read every student's phone number and edit every team. Remove the variables once you have promoted a real admin |
+| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_PHONE`, `ADMIN_COLLEGE_ID` | The first way in, created at server start. Use a long password: this account can read every student's phone number and edit every team. Remove the variables once you have promoted a real admin |
 | `SMTP_URL`, `EMAIL_FROM` | Any SMTP provider: `smtp://user:pass@host:587`. Gmail needs an app password; a provider sending as your own domain needs that domain's SPF/DKIM set up, or the mail lands in spam |
 
 Indexes are created on first use. Load the colleges and the student roster at `/admin/colleges` and `/admin/students` before anyone can sign up.
