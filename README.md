@@ -50,7 +50,9 @@ If someone's number has changed since the sheet was made, edit their row at `/ad
 
 On a fresh database nobody can sign up, because the student list is empty and the list is the gate. Two ways in:
 
-**Break-glass admin (set it and forget it).** Put `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the environment. That account is created once, at server start, before the first request — so it works on a completely empty database. It has no college, so it runs `/admin` but cannot register for a contest. Restarting never duplicates it or resets its password; once the account exists the env vars stop being the source of truth, and clearing them leaves it in place. If an account with that email already exists, it is promoted rather than re-created.
+**Break-glass admin.** Put `ADMIN_EMAIL` and `ADMIN_PASSWORD` in the environment, then just log in with them. The account is created the first time those exact credentials are submitted to the login or sign-up form, with the admin role and no student-roster row — so it works on a completely empty database. Sign-up also keeps the name and mobile you type. It has no college, so it runs `/admin` but cannot register for a contest, and cannot be added to a team.
+
+Both halves must match, so a wrong password against that address creates nothing and fails like any other login. Once the account exists the env vars stop being the source of truth: changing `ADMIN_PASSWORD` does not change the account's password, and clearing both leaves the account working.
 
 **Or promote an existing account.**
 
