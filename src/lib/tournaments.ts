@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb'
 import { randomInt } from 'node:crypto'
 import { db, ensureIndexes } from './db.ts'
-import { istToUtc } from './time.ts'
+import { formatIst, istToUtc } from './time.ts'
 import type { Game, Glyph, Status, TournamentInput, RegistrationInput, RoomInput } from './schemas.ts'
 
 export type Player = { name: string; inGameId: string }
@@ -24,6 +24,14 @@ export const registrations = () => db.collection<Registration>('registrations')
 
 export const isRegOpen = (t: Pick<Tournament, 'status' | 'regClosesAt' | 'slotsTaken' | 'maxSlots'>, now = new Date()) =>
   t.status === 'open' && now < t.regClosesAt && t.slotsTaken < t.maxSlots
+
+/** Plain, serialisable shape for client components: never hand a Mongo document across the server/client boundary. */
+export const toView = (t: Tournament, now = new Date()) => ({
+  slug: t.slug, gameName: t.gameName, title: t.title, mode: t.mode, glyph: t.glyph, hue: t.hue,
+  startsAt: t.startsAt.toISOString(), startsLabel: formatIst(t.startsAt),
+  teamSize: t.teamSize, maxSlots: t.maxSlots, slotsTaken: t.slotsTaken, open: isRegOpen(t, now),
+})
+export type GameView = ReturnType<typeof toView>
 
 export const listOpen = () =>
   tournaments().find({ status: 'open', startsAt: { $gt: new Date() } }).sort({ startsAt: 1 }).toArray()

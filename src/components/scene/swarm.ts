@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { getTarget, subscribe, type Target } from './scene-store'
+import { getTarget, setActiveStage, stages, subscribe, type Target } from './scene-store'
 import { field, shapeFor } from './shapes'
 
 const TAU = Math.PI * 2
@@ -113,28 +113,24 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
 
   // ---- state (all scratch is hoisted: nothing is allocated per frame)
   let target: Target = getTarget()
+  let shapeKey = ''
   let reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   let raf = 0, last = 0, time = 0, rot = 0, burstT = -1, frames = 0, frameSum = 0, halved = false
-  let needsResize = true, ptrX = 99, ptrY = 99, scrollY = window.scrollY
+  let needsResize = true, ptrX = 99, ptrY = 99
+  let activeEl: HTMLElement | null = null, activeT: Target | null | undefined
   const goalColor = [1, 1, 1], color = [1, 1, 1]
   let goalOpacity = 0, anchorX = 0, anchorY = 0, scale = 1
   const stats = new URLSearchParams(location.search).has('glstats')
 
-  function aim() {
-    const t = target
+  function retarget(t: Target) {
+    target = t
     if (t.hue === null) oklch(0.93, 0.22, 125, goalColor)
     else oklch(0.78, 0.17, t.hue, goalColor)
     goalOpacity = t.shape === 'field' ? 0.22 : 0.85
-    const centred = t.shape === 'field' || t.shape === 'check'
-    const wide = innerWidth >= 900
-    anchorX = centred || !wide ? 0 : 1.7
-    anchorY = centred || wide ? 0 : 1.15
-    scale = wide ? 1 : 0.62
-  }
 
-  function retarget(t: Target) {
-    target = t
-    aim()
+    const key = `${t.shape}:${t.slots?.taken}/${t.slots?.max}`
+    if (key === shapeKey && !t.burst) return // same shape: only the colour moves
+    shapeKey = key
     // bake where every particle is right now into aFrom, so interrupting a morph never pops
     const from = aFrom.array as Float32Array, to = aTo.array as Float32Array, prog = u.uProgress.value
     for (let i = 0; i < COUNT; i++) {
@@ -147,14 +143,6 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
     aFrom.needsUpdate = true; aTo.needsUpdate = true
     u.uProgress.value = reduced ? 1 : 0
     burstT = t.burst && !reduced ? 0 : -1
-    if (reduced) { snap(); draw() }
-  }
-
-  function snap() { // reduced motion: jump straight to the goal values
-    color[0] = goalColor[0]; color[1] = goalColor[1]; color[2] = goalColor[2]
-    u.uOpacity.value = goalOpacity; u.uAnchor.value.set(anchorX, anchorY); u.uScale.value = scale
-    u.uColor.value.set(color[0], color[1], color[2])
-    u.uMotion.value = 0; u.uBurst.value = 0; u.uRot.value = 0
   }
 
   function resize() {
@@ -164,13 +152,24 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
     camera.aspect = w / h
     camera.updateProjectionMatrix()
     u.uSize.value = renderer.domElement.height * 0.016
-    aim()
   }
 
-  function draw() {
-    if (needsResize) resize()
-    camera.position.y = -scrollY * 0.0009
-    renderer.render(scene, camera)
+  /** Find the most visible stage and aim the swarm at its box. CSS owns the layout; this only follows it. */
+  function followStage() {
+    let best: HTMLElement | null = null, bestArea = 0, bx = 0, by = 0, bw = 0, bh = 0
+    for (const el of stages.keys()) {
+      const r = el.getBoundingClientRect()
+      const area = Math.max(0, Math.min(r.right, innerWidth) - Math.max(r.left, 0)) * Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0))
+      if (area > bestArea) { best = el; bestArea = area; bx = r.left + r.width / 2; by = r.top + r.height / 2; bw = r.width; bh = r.height }
+    }
+    const t = best ? stages.get(best) ?? null : undefined
+    if (best !== activeEl || t !== activeT) { activeEl = best; activeT = t; setActiveStage(t) }
+    const px = (2 * HALF_H) / innerHeight // world units per CSS pixel at z = 0
+    if (best) {
+      anchorX = (bx - innerWidth / 2) * px
+      anchorY = -(by - innerHeight / 2) * px
+      scale = Math.min(1.15, (Math.min(bw, bh) * px) / 3.4)
+    } else { anchorX = 0; anchorY = 0; scale = 1.2 }
   }
 
   function frame(now: number) {
@@ -178,6 +177,8 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
     const dt = Math.min(0.05, (now - last) / 1000 || 0.016)
     last = now
     time += dt
+    if (needsResize) resize()
+    followStage()
 
     // budget: if the first stretch of frames is slow, draw half the points at DPR 1
     if (!halved && ++frames > 30 && frames <= 120) {
@@ -197,53 +198,54 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
     }
     if (burstT < 0 || burstT > 0.35) u.uProgress.value = Math.min(1, u.uProgress.value + dt / MORPH_S)
 
-    if (target.shape === 'trophy') rot += dt * 0.35
+    if (reduced) rot = 0
+    else if (target.shape === 'trophy') rot += dt * 0.35
     else rot += (Math.round(rot / TAU) * TAU + Math.sin(time * 0.5) * 0.3 - rot) * Math.min(1, dt * 3)
 
-    const k = Math.min(1, dt * 4)
+    // reduced motion: values snap (k = 1) and nothing drifts; the loop only keeps the swarm glued to its stage while scrolling
+    const k = reduced ? 1 : Math.min(1, dt * 4)
     for (let i = 0; i < 3; i++) color[i] += (goalColor[i] - color[i]) * k
     u.uColor.value.set(color[0], color[1], color[2])
-    const fade = q.coarse ? 1 - 0.7 * Math.min(1, scrollY / 700) : 1
-    u.uOpacity.value += (goalOpacity * fade - u.uOpacity.value) * k
-    u.uAnchor.value.x += (anchorX - u.uAnchor.value.x) * k
-    u.uAnchor.value.y += (anchorY - u.uAnchor.value.y) * k
+    u.uOpacity.value += (goalOpacity - u.uOpacity.value) * k
+    const follow = reduced ? 1 : Math.min(1, dt * 9) // tighter than colour so scrolling does not leave the swarm behind
+    u.uAnchor.value.x += (anchorX - u.uAnchor.value.x) * follow
+    u.uAnchor.value.y += (anchorY - u.uAnchor.value.y) * follow
     u.uScale.value += (scale - u.uScale.value) * k
     u.uPointer.value.x += (ptrX - u.uPointer.value.x) * Math.min(1, dt * 10)
     u.uPointer.value.y += (ptrY - u.uPointer.value.y) * Math.min(1, dt * 10)
     u.uTime.value = time
     u.uRot.value = rot
-    u.uMotion.value = 1
+    u.uMotion.value = reduced ? 0 : 1
+    if (reduced) { u.uProgress.value = 1; u.uBurst.value = 0 }
 
-    draw()
-    if (stats) (window as unknown as { __gl: unknown }).__gl = { info: renderer.info.render, ms: dt * 1000, count: halved ? COUNT >> 1 : COUNT }
+    renderer.render(scene, camera)
+    if (stats) (window as unknown as { __gl: unknown }).__gl = { calls: renderer.info.render.calls, ms: dt * 1000, count: halved ? COUNT >> 1 : COUNT }
   }
 
-  const start = () => { if (!raf && !reduced && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame) } }
+  const start = () => { if (!raf && !document.hidden) { last = performance.now(); raf = requestAnimationFrame(frame) } }
   const stop = () => { cancelAnimationFrame(raf); raf = 0 }
 
-  // ---- listeners
+  // ---- listeners (no scroll listener: the frame loop reads the stage's box directly)
   const onPointer = (e: PointerEvent) => {
     ptrX = (e.clientX / innerWidth * 2 - 1) * HALF_H * camera.aspect
-    ptrY = -(e.clientY / innerHeight * 2 - 1) * HALF_H + camera.position.y
+    ptrY = -(e.clientY / innerHeight * 2 - 1) * HALF_H
   }
   const onPointerGone = (e: PointerEvent) => { if (e.type === 'pointerleave' || e.pointerType !== 'mouse') { ptrX = 99; ptrY = 99 } }
-  const onScroll = () => { scrollY = window.scrollY; if (reduced) draw() }
-  const onResize = () => { needsResize = true; if (reduced) draw() }
+  const onResize = () => { needsResize = true }
   const onVisibility = () => (document.hidden ? stop() : start())
   const mq = matchMedia('(prefers-reduced-motion: reduce)')
-  const onMotion = () => { reduced = mq.matches; if (reduced) { stop(); u.uProgress.value = 1; snap(); draw() } else start() }
+  const onMotion = () => { reduced = mq.matches }
 
   window.addEventListener('pointermove', onPointer, { passive: true })
   window.addEventListener('pointerup', onPointerGone, { passive: true })
   document.documentElement.addEventListener('pointerleave', onPointerGone)
-  window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onResize)
   document.addEventListener('visibilitychange', onVisibility)
   mq.addEventListener('change', onMotion)
   const unsubscribe = subscribe(retarget)
 
   retarget(target) // first morph: from the loose field into whatever the page asked for
-  if (reduced) { snap(); draw() } else start()
+  start()
 
   return {
     dispose() {
@@ -252,7 +254,6 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
       window.removeEventListener('pointermove', onPointer)
       window.removeEventListener('pointerup', onPointerGone)
       document.documentElement.removeEventListener('pointerleave', onPointerGone)
-      window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onResize)
       document.removeEventListener('visibilitychange', onVisibility)
       mq.removeEventListener('change', onMotion)

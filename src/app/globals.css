@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
+/* Voltage: ink base, acid-lime primary, one accent hue per game.
+   Shape rule: buttons are pills, panels are 28px (22px inner), inputs are 12px. Nothing else. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: oklch(0.14 0.02 285);
+  --surface: oklch(0.19 0.025 285);
+  --raised: oklch(0.235 0.03 285);
+  --line: oklch(0.30 0.03 285);
+  --text: oklch(0.96 0.01 110);
+  --muted: oklch(0.72 0.02 285);
+  --volt: oklch(0.93 0.22 125);
+  --danger: oklch(0.7 0.19 25);
+  --accent: var(--volt);
+  --spring: cubic-bezier(0.32, 0.72, 0, 1);
+  color-scheme: dark;
 }
+
+/* A game's colour world: set --hue on any wrapper and everything inside re-derives its accent. */
+.hue { --accent: oklch(0.78 0.17 var(--hue)); }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-volt: var(--volt);
+  --color-danger: var(--danger);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-archivo);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html {
+  /* the WebGL canvas paints over this; it is what shows if WebGL is unavailable */
+  background:
+    radial-gradient(60rem 40rem at 85% 10%, oklch(0.93 0.22 125 / 0.07), transparent 60%),
+    var(--ink);
+  color: var(--text);
+}
+body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}
+
+:focus-visible { outline: 2px solid var(--volt); outline-offset: 3px; border-radius: 6px; }
+::selection { background: var(--volt); color: var(--ink); }
+
+/* Wide, heavy, uppercase: the jersey-lettering voice. Archivo's width axis does the work. */
+.display {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-stretch: 125%;
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.num { font-variant-numeric: tabular-nums; }
+
+/* Page enter: template.tsx remounts per navigation, which replays this. */
+@keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
+/* The one orchestrated load moment: hero lines rise in sequence while the swarm assembles. */
+@keyframes rise { from { opacity: 0; transform: translateY(28px); filter: blur(6px); } }
+@keyframes row-in { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .page-in { animation: page-in 0.45s var(--spring) both; }
+  .rise > * { animation: rise 0.9s var(--spring) both; animation-delay: calc(var(--i, 0) * 90ms + 120ms); }
+  .stagger > * { animation: rise 0.6s var(--spring) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  /* rows reveal as they scroll into view; browsers without scroll-driven animations just show them */
+  @supports (animation-timeline: view()) {
+    .row-in { animation: row-in linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Pointer spotlight on panels: --mx/--my are written straight to the element by Spotlight, never through React state. */
+.spot { position: relative; isolation: isolate; }
+.spot::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(22rem circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklch, var(--accent) 22%, transparent), transparent 65%);
+  opacity: 0; transition: opacity 0.5s var(--spring);
 }
+@media (hover: hover) { .spot:hover::before { opacity: 1; } }
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

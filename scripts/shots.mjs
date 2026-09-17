@@ -1,7 +1,7 @@
 // Headless Chrome screenshots over the DevTools Protocol, using Node's built-in WebSocket. No puppeteer.
 //   node scripts/shots.mjs /@home /games/x@game
 //   options: --base http://localhost:3100  --only desktop|phone  --wait 2500  --eval "js run after load"
-//            --cookie "name=value"  --scroll 800  --gpu  --reduced  --out shots
+//            --cookie "name=value"  --scroll 800  --hover "css selector" (real mouse move)  --gpu  --reduced  --out shots
 import { spawn } from 'node:child_process'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -11,7 +11,7 @@ const args = process.argv.slice(2)
 const opt = (name, fallback) => { const i = args.indexOf(`--${name}`); return i < 0 ? fallback : args.splice(i, 2)[1] }
 const flag = name => { const i = args.indexOf(`--${name}`); return i >= 0 && !!args.splice(i, 1) }
 const base = opt('base', 'http://localhost:3100'), only = opt('only'), wait = +opt('wait', 2500), js = opt('eval')
-const cookie = opt('cookie'), scroll = +opt('scroll', 0), out = opt('out', 'shots'), gpu = flag('gpu'), reduced = flag('reduced')
+const cookie = opt('cookie'), hover = opt('hover'), scroll = +opt('scroll', 0), out = opt('out', 'shots'), gpu = flag('gpu'), reduced = flag('reduced')
 const pages = args.map(a => { const i = a.lastIndexOf('@'), path = i < 0 ? a : a.slice(0, i); return { path, name: i < 0 ? path.replace(/\W+/g, '-').replace(/^-|-$/g, '') || 'home' : a.slice(i + 1) } })
 const VIEWS = [
   { id: 'desktop', width: 1440, height: 900, deviceScaleFactor: 1, mobile: false },
@@ -68,6 +68,16 @@ try {
       await sleep(wait)
       const run = expression => send('Runtime.evaluate', { expression, awaitPromise: true, userGesture: true }, s)
       if (scroll) { await run(`document.documentElement.style.scrollBehavior='auto'; scrollTo(0, ${scroll})`); await sleep(900) }
+      if (hover) {
+        const r = await run(`(() => { const el = document.querySelector(${JSON.stringify(hover)}); if (!el) return null; el.scrollIntoView({ block: 'center', behavior: 'instant' }); const b = el.getBoundingClientRect(); return JSON.stringify([b.x + b.width / 2, b.y + b.height / 2]) })()`)
+        if (!r.result?.value) console.error('hover target not found:', hover)
+        else {
+          const [x, y] = JSON.parse(r.result.value)
+          await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: x - 40, y }, s)
+          await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y }, s)
+          await sleep(wait)
+        }
+      }
       if (js) {
         const r = await run(js)
         if (r.exceptionDetails) console.error('eval failed:', r.exceptionDetails.exception?.description ?? r.exceptionDetails.text)
