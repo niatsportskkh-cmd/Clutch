@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin'
 import { formatIst } from '@/lib/time'
-import { listAll } from '@/lib/tournaments'
+import { listAll, countTeams } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
 import { GlyphIcon } from '@/components/GlyphIcon'
 import { Panel } from '@/components/Panel'
@@ -13,11 +13,18 @@ const STATUS_STYLE = { draft: 'text-muted', open: 'text-volt', closed: 'text-dan
 export default async function AdminHome() {
   await requireAdmin()
   const all = await listAll()
+  const counts = await countTeams(all.map(t => t._id))
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <h1 className="display text-4xl sm:text-5xl">Games</h1>
-        <Button href="/admin/games/new">Add game</Button>
+        <div className="flex gap-2">
+          <Button href="/admin/teams" variant="secondary">Teams</Button>
+          <Button href="/admin/colleges" variant="secondary">Colleges</Button>
+          <Button href="/admin/students" variant="secondary">Students</Button>
+          <Button href="/admin/people" variant="secondary">Admins</Button>
+          <Button href="/admin/games/new">Add game</Button>
+        </div>
       </header>
       {all.length === 0 && <p className="text-lg text-muted">No games yet. Add the first one and it shows up on the home page as soon as its status is Open.</p>}
       <ul className="flex flex-col gap-3">
@@ -30,7 +37,7 @@ export default async function AdminHome() {
                 <Link href={`/admin/games/${t._id.toHexString()}`} className="display block truncate text-xl hover:underline hover:underline-offset-4">{t.title}</Link>
                 <p className="text-sm text-muted">{formatIst(t.startsAt)}</p>
               </div>
-              <p className="num text-right"><span className="text-lg font-semibold text-text">{t.slotsTaken} / {t.maxSlots}</span><br /><span className="text-sm text-muted">slots taken</span></p>
+              <p className="num text-right"><span className="text-lg font-semibold text-text">{counts.get(t._id.toHexString()) ?? 0}</span><br /><span className="text-sm text-muted">teams</span></p>
               <p className={`w-24 text-sm font-semibold capitalize ${STATUS_STYLE[t.status]}`}>{t.status}</p>
               <div className="flex gap-2">
                 {(t.status === 'open' || t.status === 'closed' || t.status === 'draft') && (

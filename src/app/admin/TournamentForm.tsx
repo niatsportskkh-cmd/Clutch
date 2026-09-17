@@ -10,12 +10,13 @@ import { saveTournamentAction, type FormState } from './actions'
 
 export type TournamentValues = {
   game: Game; gameName: string; title: string; mode: string; glyph: Glyph; hue: number
-  startsAt: string; regClosesAt: string; teamSize: number; maxSlots: number; rules: string; prize: string; status: string
+  startsAt: string; regClosesAt: string; teamSize: number; branches: string[]; requireInGameId: boolean
+  rules: string; prize: string; status: string
 }
 const GAME_LABEL: Record<Game, string> = { bgmi: 'BGMI', freefire: 'Free Fire MAX', valorant: 'Valorant', codm: 'COD Mobile', custom: 'Another game' }
 const STATUS_HINT = 'Draft is hidden. Open is listed and accepts registrations. Closed and Completed are hidden from the home page.'
 
-export function TournamentForm({ id, initial, locked }: { id: string | null; initial: TournamentValues; locked: boolean }) {
+export function TournamentForm({ id, initial, locked, colleges }: { id: string | null; initial: TournamentValues; locked: boolean; colleges: { name: string; location: string }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveTournamentAction.bind(null, id), null)
   const kept = state && !state.ok ? state.values : undefined
   // fields a preset rewrites are controlled; everything else is plain defaultValue
@@ -25,6 +26,7 @@ export function TournamentForm({ id, initial, locked }: { id: string | null; ini
   const [hue, setHue] = useState(initial.hue)
   const [teamSize, setTeamSize] = useState(initial.teamSize)
   const v = (k: keyof TournamentValues) => kept?.[k] ?? String(initial[k])
+  const byLocation = [...new Set(colleges.map(c => c.location))].map(l => ({ location: l, names: colleges.filter(c => c.location === l).map(c => c.name) }))
 
   function pickGame(g: Game) {
     const p = PRESETS[g]
@@ -48,8 +50,41 @@ export function TournamentForm({ id, initial, locked }: { id: string | null; ini
         <Field label="Registration closes (IST)" name="regClosesAt" type="datetime-local" defaultValue={v('regClosesAt')} hint="Leave empty to close at start time." />
         <Field label="Players per team" name="teamSize" type="number" required min={1} max={10} value={teamSize} readOnly={locked} onChange={e => setTeamSize(+e.target.value)}
           hint={locked ? 'Locked: teams have already registered with this size.' : '1 is solo, 2 duo, 4 squad, 5 for 5v5.'} />
-        <Field label="Slots" name="maxSlots" type="number" required min={1} max={1000} defaultValue={v('maxSlots')} hint="How many teams (or solo players) can join. Cannot go below slots already taken." />
       </div>
+
+      <fieldset>
+        <legend className="text-sm font-medium text-text">Colleges</legend>
+        <p className="mt-1 mb-3 text-sm text-muted">
+          Only students of the colleges you tick can see this contest or register for it. There is no cap on teams.
+        </p>
+        {colleges.length === 0 ? (
+          <p className="text-danger">No colleges on the list yet. Add them under Colleges first.</p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {byLocation.map(({ location, names }) => (
+              <div key={location}>
+                <p className="mb-2 text-sm font-semibold tracking-wide text-accent uppercase">{location}</p>
+                <div className="flex flex-wrap gap-2">
+                  {names.map(n => (
+                    <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-sm font-semibold text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-volt">
+                      <input type="checkbox" name="branches" value={n} defaultChecked={initial.branches.includes(n)} className="sr-only" />
+                      {n}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </fieldset>
+
+      <label className="flex items-start gap-3 text-sm">
+        <input type="checkbox" name="requireInGameId" defaultChecked={initial.requireInGameId} className="mt-1 h-5 w-5 accent-(--accent)" />
+        <span>
+          <span className="font-medium text-text">Ask for an in-game ID</span>
+          <span className="block text-muted">Tick for a video game that needs a player ID in the room. Leave off for anything else.</span>
+        </span>
+      </label>
 
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-text">Mark and colour</legend>

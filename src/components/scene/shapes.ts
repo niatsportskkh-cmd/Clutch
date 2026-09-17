@@ -93,32 +93,28 @@ function fromPath({ d, stroke }: { d: string; stroke?: number }, count: number, 
   return out
 }
 
-/** The live slot ring: taken slots are dense blobs, free slots are faint hollow circles. */
-function slots(taken: number, max: number, count: number) {
+/**
+ * One blob per team on a sunflower spiral. With no cap on teams the old slot ring had nothing to
+ * divide by, and a spiral reads as a count at three teams and still at three hundred.
+ */
+function teamCloud(n: number, count: number) {
   const out = new Float32Array(count * 3)
-  const R = 1.35
-  if (max <= 64) {
-    const s = Math.min(0.12, (TAU * R / max) * 0.22)
-    const W = Math.min(5, Math.max(2, max / 5)) // few big slots need less packing or the blobs burn out to white
-    const weightTaken = W * taken, totalW = weightTaken + (max - taken)
+  const R = 1.45
+  if (n === 0) { // nothing registered yet: a thin empty ring rather than a misleading blob
     for (let i = 0; i < count; i++) {
-      const w = rand() * totalW
-      const isTaken = w < weightTaken
-      const slot = isTaken ? (w / W) | 0 : taken + ((w - weightTaken) | 0)
-      const a = Math.PI / 2 - (slot / max) * TAU // start at 12 o'clock, clockwise
-      let dx: number, dy: number
-      if (isTaken) { dx = gauss() * s; dy = gauss() * s }
-      else { const b = rand() * TAU; dx = Math.cos(b) * s * 1.5 + gauss() * 0.006; dy = Math.sin(b) * s * 1.5 + gauss() * 0.006 }
-      out[i * 3] = Math.cos(a) * R + dx; out[i * 3 + 1] = Math.sin(a) * R + dy; out[i * 3 + 2] = gauss() * (isTaken ? s : 0.01)
+      const a = rand() * TAU, r = R + gauss() * 0.012
+      out[i * 3] = Math.cos(a) * r; out[i * 3 + 1] = Math.sin(a) * r; out[i * 3 + 2] = gauss() * 0.01
     }
-  } else { // too many to read individually: a gauge arc
-    const frac = taken / max
-    for (let i = 0; i < count; i++) {
-      const inTaken = rand() < (frac > 0 ? 0.8 : 0)
-      const u = inTaken ? rand() * frac : frac + rand() * (1 - frac)
-      const a = Math.PI / 2 - u * TAU, r = R + gauss() * (inTaken ? 0.09 : 0.02)
-      out[i * 3] = Math.cos(a) * r; out[i * 3 + 1] = Math.sin(a) * r; out[i * 3 + 2] = gauss() * (inTaken ? 0.06 : 0.01)
-    }
+    return out
+  }
+  const GOLDEN = Math.PI * (3 - Math.sqrt(5))
+  const s = Math.min(0.1, 0.42 / Math.sqrt(n))
+  for (let i = 0; i < count; i++) {
+    const k = (rand() * n) | 0 // particles spread evenly over the teams, so every blob keeps its weight
+    const r = R * Math.sqrt((k + 0.5) / n), a = k * GOLDEN
+    out[i * 3] = Math.cos(a) * r + gauss() * s
+    out[i * 3 + 1] = Math.sin(a) * r + gauss() * s
+    out[i * 3 + 2] = gauss() * s
   }
   return out
 }
@@ -126,14 +122,14 @@ function slots(taken: number, max: number, count: number) {
 const cache = new Map<string, Float32Array>()
 
 export function shapeFor(t: Target, count: number) {
-  const key = `${count}:${t.shape}:${t.shape === 'slots' ? `${t.slots?.taken}/${t.slots?.max}` : ''}`
+  const key = `${count}:${t.shape}:${t.shape === 'teams' ? t.teams : ''}`
   let pts = cache.get(key)
   if (!pts) {
     if (t.shape === 'trophy') pts = trophy(count)
     else if (t.shape === 'field') pts = field(count)
-    else if (t.shape === 'slots') pts = slots(t.slots?.taken ?? 0, Math.max(1, t.slots?.max ?? 1), count)
+    else if (t.shape === 'teams') pts = teamCloud(Math.max(0, t.teams ?? 0), count)
     else pts = fromPath(GLYPH_PATHS[t.shape], count)
-    if (cache.size > 40) cache.clear() // slot counts change over a long session; never grow without bound
+    if (cache.size > 40) cache.clear() // team counts change over a long session; never grow without bound
     cache.set(key, pts)
   }
   return pts
