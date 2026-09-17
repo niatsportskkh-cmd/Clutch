@@ -72,7 +72,7 @@ One in-game ID field per player, with a per-game placeholder (BGMI: character ID
 
 ### Users
 
-Managed by better-auth. One additional required field: `phone` (Indian mobile, 10 digits, optional `+91`, stored normalised).
+Managed by better-auth. One additional required field: `phone` (WhatsApp number so the organiser can reach the captain). It is collected only, never verified: no OTP, no SMS. The only check is a loose shape check (10 to 13 digits after stripping spaces, `+` and dashes) so typos get caught.
 
 ### Slot claim (the one piece of real logic)
 
