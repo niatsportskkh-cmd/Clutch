@@ -8,6 +8,10 @@ import { hasAccount } from './actions'
 import { Button } from '@/components/Button'
 import { Field } from '@/components/Field'
 import { Panel } from '@/components/Panel'
+import { PasswordField } from '@/components/PasswordField'
+
+// placeholder: the organisers will swap in their real address
+const ORGANISERS_EMAIL = 'organisers@clutch.example'
 
 type Mode = 'login' | 'signup'
 const COPY: Record<Mode, { title: string; submit: string; busy: string }> = {
@@ -56,7 +60,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
                 hint="The mobile number NIAT has on file for your college ID. No OTP." />
             </>
           )}
-          <Field label="Password" name="password" type="password" required minLength={8}
+          <PasswordField label="Password" name="password" required minLength={8}
             autoComplete={mode === 'login' ? 'current-password' : 'new-password'} hint={mode === 'login' ? undefined : 'At least 8 characters.'} />
           <p aria-live="polite" className={`text-danger ${error ? '' : 'hidden'}`}>{error}</p>
           <Button type="submit" disabled={busy}>{busy ? c.busy : c.submit}</Button>
@@ -66,6 +70,14 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         {mode === 'login' && <>New here? <Link className="font-semibold text-text underline underline-offset-4" href={withNext('/signup')}>Sign up</Link>.</>}
         {mode === 'signup' && <>Already have an account? <Link className="font-semibold text-text underline underline-offset-4" href={withNext('/login')}>Log in</Link>. Not on the student list yet? Ask the organisers to add you.</>}
       </p>
+      {/* the site sends no email, so a forgotten password goes to a person: an admin sets a new one */}
+      {mode === 'login' && (
+        <p className="mt-3 text-muted">
+          Forgot your password? Email{' '}
+          <a className="font-semibold text-text underline underline-offset-4" href={`mailto:${ORGANISERS_EMAIL}?subject=${encodeURIComponent('Forgot my Clutch password')}`}>{ORGANISERS_EMAIL}</a>{' '}
+          from the email you signed up with and include your college ID. An organiser will set a new one for you.
+        </p>
+      )}
     </div>
   )
 }

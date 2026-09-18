@@ -6,6 +6,7 @@ import { formatIst } from '@/lib/time'
 import { getBySlug, isRegOpen, myTeam, visibleTo } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
 import { GameBanner } from '@/components/GameBanner'
+import { LoginGate } from '@/components/LoginGate'
 import { Panel } from '@/components/Panel'
 import { SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
 import { RegisterForm } from './RegisterForm'
@@ -21,7 +22,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   const t = await getBySlug(slug)
   if (!t || t.status === 'draft' || !isGame(t.game)) notFound()
   const user = await getUser()
-  if (!user) redirect(`/login?next=${encodeURIComponent(`/games/${slug}/register`)}`)
+  if (!user) return <LoginGate next={`/games/${slug}/register`} />
   if (!visibleTo(t, user.branch)) notFound() // another college's contest does not exist as far as this account is concerned
 
   const team = user.collegeId ? await myTeam(t._id, user.collegeId) : null

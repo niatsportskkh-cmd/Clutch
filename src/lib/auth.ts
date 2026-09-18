@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth'
 import { mongodbAdapter } from 'better-auth/adapters/mongodb'
 import { nextCookies } from 'better-auth/next-js'
 import { APIError } from 'better-auth/api'
-import { headers } from 'next/headers'
+import { headers } from 'next/headers.js' // .js: node's own resolver (the tests) needs the extension; Next resolves it either way
 import { db } from './db.ts'
 import { signupGate } from './users.ts'
 
@@ -43,6 +43,22 @@ export const auth = betterAuth({
   },
   plugins: [nextCookies()], // keep last
 })
+
+/**
+ * An admin gives a player a new password: the site sends no email, so a forgotten password is fixed by a person.
+ * `who` is an email or a college ID. It signs the player out everywhere, since someone else may know the old one.
+ * An admin cannot use it on themselves; they change their own from My games, which asks for the current one.
+ */
+export async function setPassword(who: string, password: string, actorId: string) {
+  const key = who.trim()
+  const user = await db.collection('user').findOne(key.includes('@') ? { email: key.toLowerCase() } : { collegeId: key.toUpperCase() })
+  if (!user) return { ok: false as const, error: 'not_found' as const }
+  if (String(user._id) === actorId) return { ok: false as const, error: 'self' as const }
+  const ctx = await auth.$context
+  await ctx.internalAdapter.updatePassword(String(user._id), await ctx.password.hash(password))
+  await ctx.internalAdapter.deleteUserSessions(String(user._id))
+  return { ok: true as const, name: user.name as string, email: user.email as string }
+}
 
 export async function getUser() {
   const session = await auth.api.getSession({ headers: await headers() })

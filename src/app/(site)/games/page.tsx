@@ -7,6 +7,7 @@ import { BackLink } from '@/components/BackLink'
 import { Button } from '@/components/Button'
 import { GameCard } from '@/components/GameCard'
 import { GameIcon } from '@/components/GameIcon'
+import { LoginGate } from '@/components/LoginGate'
 import { SceneTarget } from '@/components/scene/SceneTarget'
 
 export const dynamic = 'force-dynamic'
@@ -20,6 +21,7 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
   const { game: raw = '', page: rawPage = '1' } = await searchParams
   const game = isGame(raw) ? raw : '' // keyed by game, e.g. ?game=bgmi; anything else means every game
   const user = await getUser()
+  if (!user) return <LoginGate next={game ? `/games?game=${game}` : '/games'} />
   // ponytail: loads every open contest and pages in memory, because the filter chips need the whole set anyway.
   // Open contests are a few dozen at most; move to skip/limit in listOpen if a college ever runs hundreds at once.
   const all = await openViews(user?.branch ?? null)

@@ -12,6 +12,7 @@ import { GameBanner } from '@/components/GameBanner'
 import { Button } from '@/components/Button'
 import { Countdown } from '@/components/Countdown'
 import { GameIcon } from '@/components/GameIcon'
+import { LoginGate } from '@/components/LoginGate'
 import { RoomPanel } from '@/components/RoomPanel'
 import { TeamCount } from '@/components/TeamCount'
 import { SceneFocus, SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function GamePage({ params }: Props) {
   const { slug } = await params
   const [t, user] = await Promise.all([getBySlug(slug), getUser()])
+  if (!user) return <LoginGate next={`/games/${slug}`} />
   // 404 rather than 403: a contest another college cannot enter should not even confirm it exists
   if (!t || !isGame(t.game) || (!visibleTo(t, user?.branch) && !isAdmin(user))) notFound()
   const [reg, teamsIn, colleges] = await Promise.all([

@@ -72,7 +72,9 @@ Indexes are created on first use. Load the colleges and the student roster at `/
 - `src/components/scene/` is the swarm. `<SceneStage />` is an empty box the swarm flies into, so CSS decides where the 3D sits at each breakpoint. `<SceneTarget />` sets a page's shape and colour.
 - `src/lib/games.ts` is the five games: name, team size, in-game ID hint. It has no imports, so tests and the swarm can load it. Contests saved for any other game stay in the database but players never see them.
 - `src/lib/game-art.ts` imports each game's official art from `src/assets/games/<game>/` (every file's source is in `src/assets/games/SOURCES.md`). `public/games/<game>/mask.png` is the logo the swarm draws, and Valorant and Free Fire MAX have a `loop.mp4`.
-- `scripts/shots.mjs` takes headless Chrome screenshots: `node scripts/shots.mjs /@home --only phone`.
+- `scripts/shots.mjs` takes headless Chrome screenshots: `node scripts/shots.mjs /@home --only phone`. It skips the first-visit loader unless you pass `--intro`.
+- The first-visit loader is `src/components/IntroLoader.tsx`. A script in `<head>` shows it once per browser session (sessionStorage), and it holds the page's entrance animations until it lifts.
+- Logged out, `/games`, every contest page and every register page show a "Log in to see contests and register" screen (`LoginGate`) instead of redirecting. The home page is public.
 
 ## Known ceilings
 
@@ -81,4 +83,4 @@ Indexes are created on first use. Load the colleges and the student roster at `/
 - A signed-out visitor sees every open contest on the Games page; the college gate applies once they log in. Filter `listOpen()` differently if that should be hidden too.
 - Mobile numbers and college IDs are never verified against the student themselves, only against the roster. Someone who knows a classmate's college ID can put them on a team; the teammate sees it in My games and asks the captain to change it.
 - No payments, brackets, results or image uploads.
-- No password reset. It was removed on purpose and comes back later with a different approach. The site sends no email at all.
+- No self-service password reset, and the site sends no email. A player who forgets their password emails the organisers (the address is `ORGANISERS_EMAIL` in `src/app/(auth)/AuthForm.tsx`, a placeholder until they pick one), and an admin sets a new one under Admin, Admins and passwords. That signs the player out everywhere. Players change their own password from My games.

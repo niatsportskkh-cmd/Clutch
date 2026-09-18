@@ -1,7 +1,7 @@
 // Headless Chrome screenshots over the DevTools Protocol, using Node's built-in WebSocket. No puppeteer.
 //   node scripts/shots.mjs /@home /games/x@game
 //   options: --base http://localhost:3100  --only desktop|phone  --wait 2500  --eval "js run after load"
-//            --cookie "name=value"  --scroll 800  --hover "css selector" (real mouse move)  --gpu  --reduced  --out shots
+//            --cookie "name=value"  --scroll 800  --hover "css selector" (real mouse move)  --gpu  --reduced  --intro (show the first-visit loader)  --out shots
 import { spawn } from 'node:child_process'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -11,7 +11,7 @@ const args = process.argv.slice(2)
 const opt = (name, fallback) => { const i = args.indexOf(`--${name}`); return i < 0 ? fallback : args.splice(i, 2)[1] }
 const flag = name => { const i = args.indexOf(`--${name}`); return i >= 0 && !!args.splice(i, 1) }
 const base = opt('base', 'http://localhost:3100'), only = opt('only'), wait = +opt('wait', 2500), js = opt('eval')
-const cookie = opt('cookie'), hover = opt('hover'), scroll = +opt('scroll', 0), out = opt('out', 'shots'), gpu = flag('gpu'), reduced = flag('reduced')
+const cookie = opt('cookie'), hover = opt('hover'), scroll = +opt('scroll', 0), out = opt('out', 'shots'), gpu = flag('gpu'), reduced = flag('reduced'), intro = flag('intro')
 const pages = args.map(a => { const i = a.lastIndexOf('@'), path = i < 0 ? a : a.slice(0, i); return { path, name: i < 0 ? path.replace(/\W+/g, '-').replace(/^-|-$/g, '') || 'home' : a.slice(i + 1) } })
 const VIEWS = [
   { id: 'desktop', width: 1440, height: 900, deviceScaleFactor: 1, mobile: false },
@@ -57,6 +57,8 @@ try {
     if (view.mobile) await send('Emulation.setTouchEmulationEnabled', { enabled: true }, s)
     // headless Chrome on Linux reports reduced motion by default, which would hide every animation
     await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: reduced ? 'reduce' : 'no-preference' }] }, s)
+    // a fresh profile is a first visit, so every page would open behind the loader: mark it seen unless asked
+    if (!intro) await send('Page.addScriptToEvaluateOnNewDocument', { source: "try{sessionStorage.setItem('clutch-intro','1')}catch(e){}" }, s)
     if (cookie) {
       const eq = cookie.indexOf('=')
       await send('Network.setCookie', { name: cookie.slice(0, eq), value: cookie.slice(eq + 1), url: base }, s)

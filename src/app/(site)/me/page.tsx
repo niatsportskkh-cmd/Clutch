@@ -13,6 +13,7 @@ import { RoomPanel } from '@/components/RoomPanel'
 import { SignOutButton } from '@/components/SignOutButton'
 import { SceneTarget } from '@/components/scene/SceneTarget'
 import { cancelAction } from './actions'
+import { ChangePasswordForm } from './ChangePasswordForm'
 import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'My games' }
@@ -48,6 +49,7 @@ export default async function MePage() {
       {mine.map(({ team: reg, t }) => {
         const captain = reg.captainId === user.id
         const open = isRegOpen(t, now)
+        const solo = t.teamSize === 1
         return (
         <article key={reg._id.toHexString()} className="flex flex-col gap-3">
           <Panel inner="flex flex-col gap-5 p-5 sm:p-6">
@@ -72,7 +74,7 @@ export default async function MePage() {
               <ul className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
                 {reg.players.map(p => (
                   <li key={p.collegeId} className="flex justify-between gap-3 border-b border-line/60 py-1.5 last:border-0 sm:[&:nth-last-child(2)]:border-0">
-                    <span className="text-text">{p.name}{p.collegeId === reg.captainCollegeId && <span className="ml-2 text-xs text-accent">captain</span>}</span>
+                    <span className="text-text">{p.name}{!solo && p.collegeId === reg.captainCollegeId && <span className="ml-2 text-xs text-accent">captain</span>}</span>
                     <span className="font-mono text-muted">{t.requireInGameId && p.inGameId ? p.inGameId : p.collegeId}</span>
                   </li>
                 ))}
@@ -81,10 +83,10 @@ export default async function MePage() {
             {/* only the captain edits or withdraws; members see the team and take it up with them */}
             {captain && open && (
               <div className="flex flex-wrap gap-2 self-start">
-                <Button href={`/games/${t.slug}/register?edit=1`} variant="secondary" className="min-h-10 px-4 text-sm">Edit team</Button>
+                <Button href={`/games/${t.slug}/register?edit=1`} variant="secondary" className="min-h-10 px-4 text-sm">{solo ? 'Edit entry' : 'Edit team'}</Button>
                 <form action={cancelAction}>
                   <input type="hidden" name="id" value={reg._id.toHexString()} />
-                  <ConfirmButton variant="danger" className="min-h-10 px-4 text-sm" message={`Withdraw ${reg.teamName} from ${t.title}? Everyone on it is free to join another team.`}>Withdraw</ConfirmButton>
+                  <ConfirmButton variant="danger" className="min-h-10 px-4 text-sm" message={solo ? `Withdraw from ${t.title}? You can register again while it is open.` : `Withdraw ${reg.teamName} from ${t.title}? Everyone on it is free to join another team.`}>Withdraw</ConfirmButton>
                 </form>
               </div>
             )}
@@ -94,6 +96,11 @@ export default async function MePage() {
         </article>
         )
       })}
+
+      <section aria-labelledby="password" className="mt-8 flex flex-col gap-4">
+        <h2 id="password" className="display text-2xl">Password</h2>
+        <Panel inner="p-5 sm:p-7"><ChangePasswordForm /></Panel>
+      </section>
     </div>
   )
 }

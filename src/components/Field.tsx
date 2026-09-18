@@ -1,6 +1,6 @@
 import { useId, type ComponentProps } from 'react'
 
-const control =
+export const control =
   'w-full rounded-xl bg-ink/70 px-4 text-text ring-1 ring-inset ring-line outline-none placeholder:text-muted/80 ' +
   'transition-shadow duration-300 ease-spring focus:ring-2 focus:ring-accent aria-invalid:ring-danger'
 

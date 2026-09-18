@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/admin'
+import { setPassword } from '@/lib/auth'
 import { tournamentInput, roomInput, STATUSES, ROLES } from '@/lib/schemas'
 import { saveTournament, deleteTournament, setStatus, setRoom, cancelTeam } from '@/lib/tournaments'
 import { setRole } from '@/lib/users'
@@ -72,6 +73,23 @@ export async function setRoleAction(_prev: FormState, form: FormData): Promise<F
   }
   fresh()
   return { ok: true, message: role === 'admin' ? `${res.email} is an admin now.` : `${res.email} is no longer an admin.` }
+}
+
+export async function setPasswordAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin()
+  const who = String(form.get('who') ?? '').trim()
+  const password = String(form.get('password') ?? '')
+  if (!who) return { ok: false, error: 'Enter their email or college ID', values: { who } }
+  if (password.length < 8 || password.length > 128) return { ok: false, error: 'The new password needs 8 to 128 characters', values: { who } }
+  const res = await setPassword(who, password, admin.id)
+  if (!res.ok) {
+    return {
+      ok: false,
+      error: res.error === 'self' ? 'Change your own password from My games.' : 'No account with that email or college ID.',
+      values: { who },
+    }
+  }
+  return { ok: true, message: `Password changed for ${res.name} (${res.email}). They are signed out everywhere; send them the new one.` }
 }
 
 /** Revoking needs no form state: the page never renders the button for a case setRoleAction would reject. */

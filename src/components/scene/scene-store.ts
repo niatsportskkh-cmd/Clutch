@@ -41,3 +41,8 @@ export const setActiveStage = (t: Target | null | undefined) => {
 }
 
 export const subscribe = (f: (t: Target) => void) => { subs.add(f); return () => { subs.delete(f) } }
+
+/** Settles once the swarm has started drawing. The first-visit loading screen waits on it (and gives up after a cap). */
+let markReady = () => {}
+export const swarmReady = new Promise<void>(r => { markReady = r })
+export const setSwarmReady = () => markReady()

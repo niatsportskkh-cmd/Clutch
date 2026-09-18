@@ -23,7 +23,7 @@ export default async function AdminHome() {
           <Button href="/admin/teams" variant="secondary">Teams</Button>
           <Button href="/admin/colleges" variant="secondary">Colleges</Button>
           <Button href="/admin/students" variant="secondary">Students</Button>
-          <Button href="/admin/people" variant="secondary">Admins</Button>
+          <Button href="/admin/people" variant="secondary">Admins and passwords</Button>
           <Button href="/admin/games/new">Add game</Button>
         </div>
       </header>
