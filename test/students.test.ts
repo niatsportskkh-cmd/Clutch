@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { getClient, db } from '../src/lib/db.ts'
 import { parseCsv } from '../src/lib/csv.ts'
 import { findStudent, importStudents, listStudents, saveStudent, students } from '../src/lib/students.ts'
-import { saveBranch } from '../src/lib/branches.ts'
+import { saveBranch, editBranch, getBranch } from '../src/lib/branches.ts'
 
 before(async () => {
   assert.match(db.databaseName, /test/)
@@ -72,4 +72,22 @@ test('search is filtered, paged, and safe against regex metacharacters', async (
   const paged = await listStudents({ perPage: 2 })
   assert.equal(paged.rows.length, 2)
   assert.equal(paged.pages, 2)
+})
+
+test('editing a college moves its students, accounts, contests and teams to the new name', async () => {
+  await saveBranch({ name: 'Old Name', location: 'Hyderabad' })
+  await saveStudent({ collegeId: '2203A59001', name: 'Mover', phone: '9000009001', branch: 'Old Name' })
+  await db.collection('user').insertOne({ email: 'mover@x.in', collegeId: '2203A59001', branch: 'Old Name' })
+  await db.collection('tournaments').insertOne({ title: 'Cup', branches: ['KKH', 'Old Name'] })
+  await db.collection('teams').insertOne({ teamName: 'Movers', branch: 'Old Name', location: 'Hyderabad' })
+
+  assert.equal((await editBranch('Old Name', { name: 'KKH', location: 'Hyderabad' })).ok, false) // no silent merge
+  assert.ok((await editBranch('Old Name', { name: 'New Name', location: 'Warangal' })).ok)
+
+  assert.equal(await getBranch('Old Name'), null)
+  assert.equal((await getBranch('New Name'))!.location, 'Warangal')
+  assert.equal((await students().findOne({ collegeId: '2203A59001' }))!.branch, 'New Name')
+  assert.equal((await db.collection('user').findOne({ email: 'mover@x.in' }))!.branch, 'New Name')
+  assert.deepEqual((await db.collection('tournaments').findOne({ title: 'Cup' }))!.branches, ['KKH', 'New Name'])
+  assert.deepEqual(await db.collection('teams').findOne({ teamName: 'Movers' }, { projection: { _id: 0, branch: 1, location: 1 } }), { branch: 'New Name', location: 'Warangal' })
 })

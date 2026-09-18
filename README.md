@@ -2,7 +2,7 @@
 
 Free-entry inter-college contests. An admin loads the colleges and the student roster; a student signs up only if their college ID and mobile number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs — names and numbers come from the roster, and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
 
-Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth, Nodemailer.
+Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth, Resend.
 
 ## How the pieces fit
 
@@ -36,7 +36,7 @@ npm test                        # team rules, college scoping, role guards, rost
 
 Use `127.0.0.1` in `MONGODB_URI`, not `localhost`. On Fedora `localhost` is IPv6 and rootless podman resets those connections.
 
-With `SMTP_URL` empty, emails (password reset) are printed to the dev server's terminal instead of being sent. Copy the link from there.
+With `RESEND_API_KEY` empty, emails (password reset) are printed to the dev server's terminal instead of being sent. Copy the link from there.
 
 ## The student list
 
@@ -61,7 +61,7 @@ After that, `/admin` → **Admins** promotes anyone else who already has an acco
 | `MONGODB_URI` | Atlas connection string ending in `/clutch`. In Atlas, Network Access must allow `0.0.0.0/0` (Vercel has no fixed IPs) |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | The production URL, no trailing slash |
-| `SMTP_URL`, `EMAIL_FROM` | Any SMTP provider: `smtp://user:pass@host:587`. Gmail needs an app password; a provider sending as your own domain needs that domain's SPF/DKIM set up, or the mail lands in spam |
+| `RESEND_API_KEY`, `EMAIL_FROM` | API key from resend.com. `EMAIL_FROM` must use a domain verified in Resend (add its DNS records there), or the send is rejected |
 
 Indexes are created on first use. Load the colleges and the student roster at `/admin/colleges` and `/admin/students` before anyone can sign up.
 

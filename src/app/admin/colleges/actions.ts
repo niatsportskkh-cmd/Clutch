@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/admin'
 import { branchInput } from '@/lib/schemas'
-import { importBranches, saveBranch, deleteBranch } from '@/lib/branches'
+import { importBranches, saveBranch, editBranch, deleteBranch } from '@/lib/branches'
 import type { ImportState } from '@/components/ImportForm'
 
 export type BranchState = { ok: false; error: string; values: Record<string, string> } | { ok: true; message: string } | null
@@ -14,6 +14,12 @@ export async function saveBranchAction(_prev: BranchState, form: FormData): Prom
   const values = Object.fromEntries([...form].map(([k, v]) => [k, String(v)]))
   const parsed = branchInput.safeParse(values)
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message, values }
+  if (values.original) {
+    const res = await editBranch(values.original, parsed.data)
+    if (!res.ok) return { ok: false, error: res.error, values }
+    revalidatePath('/', 'layout')
+    return { ok: true, message: `${values.original === parsed.data.name ? parsed.data.name : `${values.original} is now ${parsed.data.name}`}, in ${parsed.data.location}. Its students came with it.` }
+  }
   const { added } = await saveBranch(parsed.data)
   revalidatePath('/', 'layout') // the college list feeds the roster form and every contest form
   return { ok: true, message: `${parsed.data.name} ${added ? 'added' : 'updated'}.` }
