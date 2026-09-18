@@ -48,10 +48,11 @@ If someone's number has changed since the sheet was made, edit their row at `/ad
 
 ## Becoming admin
 
-1. Sign up normally.
-2. `npm run promote you@example.com` (add `-- --revoke` to take it back).
+**The first account ever created is the admin.** On a fresh database the student list is empty, and the student list is what every sign-up is checked against — so nobody could get in to load it. Instead, the very first sign-up skips that check and gets the admin role. Every sign-up after it must match the roster, and is a plain user.
 
-That is only needed once. After it, `/admin` → **Admins** promotes anyone else who already has an account. The role is a field on the user document, never anything the sign-up form can set, and nobody can change their own role, so the last admin cannot lock themselves out. Everyone else sees a 404 at `/admin`.
+So after pointing the site at a new database, **sign up straight away**, then open `/admin` → **Admins** and check you are the only one listed. Whoever signs up first gets the role; if it was not you, remove them there. That first account has no college, so it runs the panel but cannot register for a contest.
+
+After that, `/admin` → **Admins** promotes anyone else who already has an account. `npm run promote you@example.com` (add `-- --revoke` to take it back) does the same from a terminal. The role is a field on the user document, never anything the sign-up form can set, and nobody can change their own role, so the last admin cannot lock themselves out. Everyone else sees a 404 at `/admin`.
 
 ## Going live (Vercel + MongoDB Atlas)
 
