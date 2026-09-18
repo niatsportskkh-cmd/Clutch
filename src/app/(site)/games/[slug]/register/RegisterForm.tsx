@@ -18,14 +18,18 @@ export function RegisterForm({ slug, teamSize, requireInGameId, idHint, captainC
 
   return (
     <form action={action} className="flex flex-col gap-8">
-      <Field label="Team name" name="teamName" required minLength={2} maxLength={40} autoComplete="off"
-        defaultValue={kept?.teamName ?? initial?.teamName} placeholder="What should we call your team?" />
+      {/* a solo game still stores the entry under a name, so it asks for the player's instead of a team's */}
+      <Field label={teamSize === 1 ? 'Name in this contest' : 'Team name'} name="teamName" required minLength={2} maxLength={40} autoComplete="off"
+        defaultValue={kept?.teamName ?? initial?.teamName ?? (teamSize === 1 ? captainName.slice(0, 40) : undefined)}
+        placeholder={teamSize === 1 ? 'Your name or gamer tag' : 'What should we call your team?'} />
 
       <fieldset className="stagger flex flex-col gap-6">
         <legend className="sr-only">Players</legend>
         <p className="text-muted">
-          Type each player&apos;s college ID. Their name and number come from the student list, so there is nothing to spell wrong —
-          and everyone has to be from <span className="font-semibold text-text">{branch}</span>.
+          {teamSize === 1
+            ? <>Your name and number come from the student list. You have to be from <span className="font-semibold text-text">{branch}</span>.</>
+            : <>Type each player&apos;s college ID. Their name and number come from the student list, so there is nothing to spell wrong.
+              Everyone has to be from <span className="font-semibold text-text">{branch}</span>.</>}
         </p>
         {Array.from({ length: teamSize }, (_, i) => (
           <div key={i} style={{ '--i': i } as CSSProperties}>

@@ -1,46 +1,47 @@
 'use client'
-import { useActionState, useState, type CSSProperties } from 'react'
-import { PRESETS } from '@/lib/games'
-import { GAMES, GLYPHS, STATUSES, type Game, type Glyph } from '@/lib/schemas'
+import Image from 'next/image'
+import { useActionState, useState } from 'react'
+import { GAME, GAMES, teamLabel, type Game } from '@/lib/games'
+import { ART } from '@/lib/game-art'
+import { STATUSES } from '@/lib/schemas'
 import { Button } from '@/components/Button'
 import { Field, Select, TextArea } from '@/components/Field'
-import { GlyphIcon } from '@/components/GlyphIcon'
-import { SceneStage } from '@/components/scene/SceneTarget'
 import { saveTournamentAction, type FormState } from './actions'
 
 export type TournamentValues = {
-  game: Game; gameName: string; title: string; mode: string; glyph: Glyph; hue: number
-  startsAt: string; regClosesAt: string; teamSize: number; branches: string[]; requireInGameId: boolean
-  rules: string; prize: string; status: string
+  game: Game; title: string; mode: string; startsAt: string; regClosesAt: string
+  branches: string[]; requireInGameId: boolean; rules: string; prize: string; status: string
 }
-const GAME_LABEL: Record<Game, string> = { bgmi: 'BGMI', freefire: 'Free Fire MAX', valorant: 'Valorant', codm: 'COD Mobile', custom: 'Another game' }
-const STATUS_HINT = 'Draft is hidden. Open is listed and accepts registrations. Closed and Completed are hidden from the home page.'
+const STATUS_HINT = 'Draft is hidden. Open is listed and accepts registrations. Closed and Completed are hidden from the Games page.'
 
 export function TournamentForm({ id, initial, locked, colleges }: { id: string | null; initial: TournamentValues; locked: boolean; colleges: { name: string; location: string }[] }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveTournamentAction.bind(null, id), null)
   const kept = state && !state.ok ? state.values : undefined
-  // fields a preset rewrites are controlled; everything else is plain defaultValue
   const [game, setGame] = useState<Game>(initial.game)
-  const [gameName, setGameName] = useState(initial.gameName)
-  const [glyph, setGlyph] = useState<Glyph>(initial.glyph)
-  const [hue, setHue] = useState(initial.hue)
-  const [teamSize, setTeamSize] = useState(initial.teamSize)
   const v = (k: keyof TournamentValues) => kept?.[k] ?? String(initial[k])
+  // after an error React resets the form to its defaults, so the defaults are what was just submitted
+  const ticked = kept ? (kept.branches ?? '').split('\n') : initial.branches
+  const askIgn = kept ? kept.requireInGameId === 'on' : initial.requireInGameId
   const byLocation = [...new Set(colleges.map(c => c.location))].map(l => ({ location: l, names: colleges.filter(c => c.location === l).map(c => c.name) }))
 
-  function pickGame(g: Game) {
-    const p = PRESETS[g]
-    setGame(g); setGameName(p.gameName); setGlyph(p.glyph); setHue(p.hue)
-    if (!locked) setTeamSize(p.teamSize)
-  }
-
   return (
-    <form action={action} className="hue flex flex-col gap-6" style={{ '--hue': hue } as CSSProperties}>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Select label="Game" name="game" value={game} onChange={e => pickGame(e.target.value as Game)} hint="Picking a game fills in its name, mark, colour and team size.">
-          {GAMES.map(g => <option key={g} value={g}>{GAME_LABEL[g]}</option>)}
+    <form action={action} className="flex flex-col gap-6">
+      <div className="grid items-start gap-5 sm:grid-cols-2">
+        {/* a disabled select is not submitted, so a locked game travels in a hidden field */}
+        {locked && <input type="hidden" name="game" value={game} />}
+        {/* key: React applies a select's defaultValue only on mount, and the reset after an error goes back to it */}
+        <Select key={kept?.game} label="Game" name={locked ? undefined : 'game'} defaultValue={kept?.game ?? initial.game} disabled={locked} onChange={e => setGame(e.target.value as Game)}
+          hint={locked ? 'Locked: teams have already registered.' : 'Only these five. The game sets the team size.'}>
+          {GAMES.map(g => <option key={g} value={g}>{GAME[g].name}</option>)}
         </Select>
-        <Field label="Game name shown to players" name="gameName" required maxLength={40} value={gameName} onChange={e => setGameName(e.target.value)} />
+        <div className="flex flex-col gap-2">
+          <p className="text-sm font-medium text-text">Players per team</p>
+          <p className="flex h-12 items-center gap-3 rounded-xl bg-ink/70 px-4 ring-1 ring-inset ring-line">
+            <Image src={ART[game].icon} alt="" width={28} height={28} className="rounded-md" />
+            <span className="font-semibold text-text">{teamLabel(GAME[game].teamSize)}</span>
+            <span className="text-sm text-muted">set by the game</span>
+          </p>
+        </div>
       </div>
       <Field label="Title" name="title" required minLength={3} maxLength={80} defaultValue={v('title')} placeholder="Friday Night Scrims" />
       <Field label="Mode" name="mode" maxLength={80} defaultValue={v('mode')} placeholder="Squad TPP, Erangel" hint="Optional. Map, perspective, bracket style." />
@@ -48,8 +49,6 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Starts (IST)" name="startsAt" type="datetime-local" required defaultValue={v('startsAt')} />
         <Field label="Registration closes (IST)" name="regClosesAt" type="datetime-local" defaultValue={v('regClosesAt')} hint="Leave empty to close at start time." />
-        <Field label="Players per team" name="teamSize" type="number" required min={1} max={10} value={teamSize} readOnly={locked} onChange={e => setTeamSize(+e.target.value)}
-          hint={locked ? 'Locked: teams have already registered with this size.' : '1 is solo, 2 duo, 4 squad, 5 for 5v5.'} />
       </div>
 
       <fieldset>
@@ -67,7 +66,7 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
                 <div className="flex flex-wrap gap-2">
                   {names.map(n => (
                     <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-sm font-semibold text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-accent">
-                      <input type="checkbox" name="branches" value={n} defaultChecked={initial.branches.includes(n)} className="sr-only" />
+                      <input type="checkbox" name="branches" value={n} defaultChecked={ticked.includes(n)} className="sr-only" />
                       {n}
                     </label>
                   ))}
@@ -79,35 +78,12 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
       </fieldset>
 
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" name="requireInGameId" defaultChecked={initial.requireInGameId} className="mt-1 h-5 w-5 accent-(--accent)" />
+        <input type="checkbox" name="requireInGameId" defaultChecked={askIgn} className="mt-1 h-5 w-5 accent-(--accent)" />
         <span>
           <span className="font-medium text-text">Ask for an in-game ID</span>
-          <span className="block text-muted">Tick for a video game that needs a player ID in the room. Leave off for anything else.</span>
+          <span className="block text-muted">Each player types their {GAME[game].name} ID. No two players in the contest can use the same one.</span>
         </span>
       </label>
-
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium text-text">Mark and colour</legend>
-        <div className="grid items-center gap-5 sm:grid-cols-[1fr_12rem]">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap gap-2">
-              {GLYPHS.map(g => (
-                <label key={g} className="grid h-14 w-14 cursor-pointer place-items-center rounded-2xl text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-accent">
-                  <input type="radio" name="glyph" value={g} checked={glyph === g} onChange={() => setGlyph(g)} className="sr-only" />
-                  <GlyphIcon glyph={g} size={28} /><span className="sr-only">{g}</span>
-                </label>
-              ))}
-            </div>
-            <label className="flex items-center gap-4 text-sm text-muted">
-              Colour
-              <input type="range" name="hue" min={0} max={360} value={hue} onChange={e => setHue(+e.target.value)} className="h-11 flex-1 accent-(--accent)" />
-              <span aria-hidden className="h-8 w-8 rounded-full bg-accent ring-1 ring-inset ring-white/20" />
-            </label>
-          </div>
-          {/* live 3D preview: the swarm takes the chosen mark and colour */}
-          <SceneStage shape={glyph} hue={hue} className="h-44" />
-        </div>
-      </fieldset>
 
       <TextArea label="Rules" name="rules" maxLength={5000} defaultValue={v('rules')} hint="Plain text. Line breaks are kept." />
       <div className="grid gap-5 sm:grid-cols-2">

@@ -4,13 +4,14 @@ import { notFound } from 'next/navigation'
 import { getUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/users'
 import { listBranches } from '@/lib/branches'
-import { teamLabel } from '@/lib/games'
+import { isGame, teamLabel } from '@/lib/games'
 import { formatIst } from '@/lib/time'
 import { getBySlug, isRegOpen, myTeam, visibleTo, teams as teamsCol } from '@/lib/tournaments'
 import { AutoRefresh } from '@/components/AutoRefresh'
+import { GameBanner } from '@/components/GameBanner'
 import { Button } from '@/components/Button'
 import { Countdown } from '@/components/Countdown'
-import { GlyphIcon } from '@/components/GlyphIcon'
+import { GameIcon } from '@/components/GameIcon'
 import { RoomPanel } from '@/components/RoomPanel'
 import { TeamCount } from '@/components/TeamCount'
 import { SceneFocus, SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
@@ -27,7 +28,7 @@ export default async function GamePage({ params }: Props) {
   const { slug } = await params
   const [t, user] = await Promise.all([getBySlug(slug), getUser()])
   // 404 rather than 403: a contest another college cannot enter should not even confirm it exists
-  if (!t || (!visibleTo(t, user?.branch) && !isAdmin(user))) notFound()
+  if (!t || !isGame(t.game) || (!visibleTo(t, user?.branch) && !isAdmin(user))) notFound()
   const [reg, teamsIn, colleges] = await Promise.all([
     user?.collegeId ? myTeam(t._id, user.collegeId) : null,
     teamsCol().countDocuments({ tournamentId: t._id, status: 'confirmed' }),
@@ -48,16 +49,19 @@ export default async function GamePage({ params }: Props) {
   ]
 
   return (
-    <div className="hue lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12" style={{ '--hue': t.hue } as CSSProperties}>
-      <SceneTarget shape={t.glyph} hue={t.hue} />
+    <div className="lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+      <SceneTarget shape={t.game} hue={null} />
       <AutoRefresh />
+
+      <div className="flex flex-col gap-6 lg:col-span-2">
+        <BackLink href="/games">All games</BackLink>
+        <GameBanner game={t.game} className="mb-10 h-52 sm:h-64 lg:h-80" />
+      </div>
 
       <div className="flex min-w-0 flex-col gap-10">
         <header className="rise flex flex-col items-start gap-5">
-          <BackLink href="/games">All games</BackLink>
-          <SceneStage className="h-[30dvh] min-h-52 w-full lg:hidden" />
           <p style={{ '--i': 0 } as CSSProperties} className="flex items-center gap-2.5 font-semibold text-accent">
-            <GlyphIcon glyph={t.glyph} size={22} /> {t.gameName}
+            <GameIcon game={t.game} size={26} /> {t.gameName}
           </p>
           <h1 style={{ '--i': 1 } as CSSProperties} className="display text-[clamp(2.4rem,8.5vw,4.5rem)]">{t.title}</h1>
           <p style={{ '--i': 2 } as CSSProperties} className="text-lg text-muted">
@@ -90,10 +94,10 @@ export default async function GamePage({ params }: Props) {
           ))}
         </dl>
 
-        <SceneFocus shape="teams" hue={t.hue} teams={teamsIn} className="flex flex-col gap-5">
+        <SceneFocus shape="teams" hue={null} teams={teamsIn} className="flex flex-col gap-5">
           <h2 className="display text-2xl sm:text-3xl">Who is in</h2>
           <SceneStage className="h-[30dvh] min-h-52 lg:hidden" />
-          <TeamCount teams={teamsIn} open={open} className="max-w-md" />
+          <TeamCount teams={teamsIn} open={open} solo={t.teamSize === 1} className="max-w-md" />
           <p className="max-w-[52ch] text-muted">
             {t.teamSize > 1 ? `Teams of ${t.teamSize}, one college per team.` : 'Solo, one entry each.'} There is no cap: everyone who registers before {formatIst(t.regClosesAt)} plays.
           </p>

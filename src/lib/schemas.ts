@@ -1,11 +1,8 @@
 import { z } from 'zod'
+import { GAMES } from './games.ts'
 
-export const GAMES = ['bgmi', 'freefire', 'valorant', 'codm', 'custom'] as const
-export const GLYPHS = ['drop', 'flame', 'spike', 'rank', 'crest'] as const
 export const STATUSES = ['draft', 'open', 'closed', 'completed'] as const
 export const ROLES = ['user', 'admin'] as const
-export type Game = (typeof GAMES)[number]
-export type Glyph = (typeof GLYPHS)[number]
 export type Status = (typeof STATUSES)[number]
 export type Role = (typeof ROLES)[number]
 
@@ -22,16 +19,13 @@ export const phoneSchema = z.string()
 export const collegeIdSchema = z.string().trim().toUpperCase()
   .pipe(z.string().regex(/^[A-Z0-9][A-Z0-9/-]{2,23}$/, 'Enter a valid college ID'))
 
+// The game fixes the name and the team size (GAME in games.ts); the form only says which game.
 export const tournamentInput = z.object({
   game: z.enum(GAMES),
-  gameName: text(40).min(1, 'Game name is required'),
   title: text(80).min(3, 'Title is too short'),
   mode: text(80),
-  glyph: z.enum(GLYPHS),
-  hue: z.coerce.number().int().min(0).max(360),
   startsAt: istLocal,
   regClosesAt: istLocal.or(z.literal('')),
-  teamSize: z.coerce.number().int().min(1).max(10),
   // which colleges may see and enter this contest. No cap on teams: any number may register.
   branches: z.array(text(60)).min(1, 'Pick at least one college'),
   requireInGameId: z.coerce.boolean(),

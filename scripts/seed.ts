@@ -3,7 +3,6 @@ import { getClient } from '../src/lib/db.ts'
 import { saveTournament, tournaments, teams } from '../src/lib/tournaments.ts'
 import { branches, importBranches } from '../src/lib/branches.ts'
 import { students, importStudents } from '../src/lib/students.ts'
-import { PRESETS } from '../src/lib/games.ts'
 import { utcToIstInput } from '../src/lib/time.ts'
 
 // This writes 3 invented colleges and 48 invented students. Against a real roster that is not a
@@ -67,19 +66,17 @@ const RULES = [
 ].join('\n')
 
 const seeds = [
-  { game: 'bgmi',     title: 'Friday Night Scrims', mode: 'Squad TPP, Erangel',      days: 2, hour: 21, prize: 'Bragging rights', branches: COLLEGE_NAMES, inGameId: true },
-  { game: 'freefire', title: 'Booyah Cup',          mode: 'Squad, Bermuda',          days: 3, hour: 20, prize: '',                branches: ['KKH', 'Vignana Jyothi'], inGameId: true },
-  { game: 'valorant', title: 'Spike Rush Showdown', mode: '5v5, single elimination', days: 5, hour: 19, prize: '',                branches: ['SR University'], inGameId: true },
-  { game: 'custom',   title: 'Code Sprint',         mode: 'Pairs, 3 hours',          days: 7, hour: 18, prize: '',                branches: COLLEGE_NAMES, inGameId: false, teamSize: 2 },
+  { game: 'freefire', title: 'Booyah Cup',             mode: 'Squad, Bermuda',          days: 3, hour: 20, prize: '',                branches: ['KKH', 'Vignana Jyothi'] },
+  { game: 'bgmi',     title: 'Friday Night Scrims',    mode: 'Squad TPP, Erangel',      days: 2, hour: 21, prize: 'Bragging rights', branches: COLLEGE_NAMES },
+  { game: 'codm',     title: 'Search and Destroy Cup', mode: '5v5, Search and Destroy', days: 4, hour: 19, prize: '',                branches: COLLEGE_NAMES },
+  { game: 'valorant', title: 'Spike Rush Showdown',    mode: '5v5, single elimination', days: 5, hour: 19, prize: '',                branches: ['SR University'] },
+  { game: 'matiks',   title: 'Mental Maths Duel',      mode: '1v1, best of three',      days: 6, hour: 18, prize: '',                branches: COLLEGE_NAMES },
 ] as const
 
 for (const seed of seeds) {
-  const p = PRESETS[seed.game]
   const r = await saveTournament(null, {
-    game: seed.game, gameName: p.gameName || 'Code Sprint', title: seed.title, mode: seed.mode, glyph: p.glyph, hue: p.hue,
-    startsAt: at(seed.days, seed.hour), regClosesAt: '', teamSize: 'teamSize' in seed ? seed.teamSize : p.teamSize,
-    branches: [...seed.branches], requireInGameId: seed.inGameId,
-    rules: RULES, prize: seed.prize, status: 'open',
+    game: seed.game, title: seed.title, mode: seed.mode, startsAt: at(seed.days, seed.hour), regClosesAt: '',
+    branches: [...seed.branches], requireInGameId: true, rules: RULES, prize: seed.prize, status: 'open',
   })
   console.log(r.ok ? `seeded ${r.slug}` : r.error)
 }

@@ -4,14 +4,15 @@ import { db, ensureIndexes } from './db.ts'
 import { getBranch, listBranches } from './branches.ts'
 import { students } from './students.ts'
 import { formatIst, istToUtc } from './time.ts'
-import type { Game, Glyph, Status, TournamentInput, TeamInput, RoomInput } from './schemas.ts'
+import { GAME, GAMES, isGame, type Game } from './games.ts'
+import type { Status, TournamentInput, TeamInput, RoomInput } from './schemas.ts'
 
 export type Player = { collegeId: string; name: string; phone: string; inGameId: string }
 export type Room = { id: string; password: string; note: string; publishedAt: Date }
 
 export type Tournament = {
-  _id: ObjectId; slug: string; game: Game; gameName: string; title: string; mode: string; glyph: Glyph; hue: number
-  startsAt: Date; regClosesAt: Date; teamSize: number
+  _id: ObjectId; slug: string; game: Game; gameName: string; title: string; mode: string
+  startsAt: Date; regClosesAt: Date; teamSize: number // gameName and teamSize are copied from GAME on save
   branches: string[]        // the colleges this contest is open to; nobody else sees it
   requireInGameId: boolean
   rules: string; prize: string; status: Status; room: Room | null; createdAt: Date; updatedAt: Date
@@ -59,7 +60,7 @@ export const visibleTo = (t: Pick<Tournament, 'branches' | 'status'>, branch: st
 
 /** Plain, serialisable shape for client components: never hand a Mongo document across the server/client boundary. */
 export const toView = (t: Tournament, teamCount: number, locations: string[], now = new Date()) => ({
-  slug: t.slug, gameName: t.gameName, title: t.title, mode: t.mode, glyph: t.glyph, hue: t.hue,
+  slug: t.slug, game: t.game, gameName: t.gameName, title: t.title, mode: t.mode,
   startsAt: t.startsAt.toISOString(), startsLabel: formatIst(t.startsAt),
   teamSize: t.teamSize, teams: teamCount, locations, open: isRegOpen(t, now),
 })
@@ -72,7 +73,7 @@ export const getById = async (id: string) => (ObjectId.isValid(id) ? tournaments
 /** `branch` null means a signed-out visitor: they get every open contest, and the college gate bites at registration. */
 export const listOpen = (branch: string | null = null) =>
   tournaments()
-    .find({ status: 'open', startsAt: { $gt: new Date() }, ...(branch ? { branches: branch } : {}) })
+    .find({ status: 'open', startsAt: { $gt: new Date() }, game: { $in: [...GAMES] }, ...(branch ? { branches: branch } : {}) })
     .sort({ startsAt: 1 })
     .toArray()
 
@@ -97,7 +98,7 @@ export async function countTeams(ids: ObjectId[]) {
 /** Every team this person is on, captain or not: the roster is matched on their college ID. */
 export async function listMine(collegeId: string) {
   const mine = await teams().find({ 'players.collegeId': collegeId, status: 'confirmed' }).sort({ createdAt: -1 }).toArray()
-  const ts = await tournaments().find({ _id: { $in: mine.map(r => r.tournamentId) } }).toArray()
+  const ts = await tournaments().find({ _id: { $in: mine.map(r => r.tournamentId) }, game: { $in: [...GAMES] } }).toArray() // a retired game's teams drop out
   const byId = new Map(ts.map(t => [t._id.toHexString(), t]))
   return mine.flatMap(team => {
     const t = byId.get(team.tournamentId.toHexString())
@@ -179,7 +180,7 @@ export type TeamResult = { ok: true; code: string } | { ok: false; error: TeamEr
 export async function registerTeam(tournamentId: ObjectId, captain: SessionUser, input: TeamInput): Promise<TeamResult> {
   await ensureIndexes() // the unique index on players.collegeId is what makes the clash check race-safe
   const t = await tournaments().findOne({ _id: tournamentId })
-  if (!t) return { ok: false, error: { code: 'not_found' } }
+  if (!t || !isGame(t.game)) return { ok: false, error: { code: 'not_found' } }
   if (!isRegOpen(t)) return { ok: false, error: { code: 'closed' } }
 
   if (!captain.collegeId || !captain.branch) return { ok: false, error: { code: 'no_college' } }
@@ -215,7 +216,7 @@ export async function editTeam(teamId: ObjectId, captain: SessionUser, input: Te
   const team = await teams().findOne({ _id: teamId, captainId: captain.id, status: 'confirmed' })
   if (!team) return { ok: false, error: { code: 'not_found' } }
   const t = await tournaments().findOne({ _id: team.tournamentId })
-  if (!t) return { ok: false, error: { code: 'not_found' } }
+  if (!t || !isGame(t.game)) return { ok: false, error: { code: 'not_found' } }
   if (!isRegOpen(t)) return { ok: false, error: { code: 'closed' } }
 
   if (!captain.collegeId || !captain.branch) return { ok: false, error: { code: 'no_college' } }
@@ -294,7 +295,8 @@ export async function saveTournament(id: ObjectId | null, input: TournamentInput
   const starts = istToUtc(startsAt)
   const closes = regClosesAt ? istToUtc(regClosesAt) : starts
   if (closes > starts) return { ok: false as const, error: 'Registration must close before the game starts' }
-  const fields = { ...rest, startsAt: starts, regClosesAt: closes, updatedAt: new Date() }
+  const { name: gameName, teamSize } = GAME[input.game]
+  const fields = { ...rest, gameName, teamSize, startsAt: starts, regClosesAt: closes, updatedAt: new Date() }
 
   if (!id) {
     const _id = new ObjectId()
@@ -303,13 +305,13 @@ export async function saveTournament(id: ObjectId | null, input: TournamentInput
     return { ok: true as const, id: _id, slug }
   }
 
-  // Team size is locked once anyone has registered, and a college cannot be dropped while it has teams:
-  // both would strand real registrations. Checked here rather than in the filter, so each gets its own message.
+  // The game (and with it the team size) is locked once anyone has registered, and a college cannot be dropped while
+  // it has teams: both would strand real registrations. Checked here rather than in the filter, so each gets its own message.
   const registered = await teams().find({ tournamentId: id, status: 'confirmed' }, { projection: { branch: 1 } }).toArray()
   if (registered.length) {
     const current = await tournaments().findOne({ _id: id })
-    if (current && current.teamSize !== input.teamSize) {
-      return { ok: false as const, error: 'Team size is locked once teams have registered.' }
+    if (current && (current.game !== input.game || current.teamSize !== teamSize)) {
+      return { ok: false as const, error: 'The game is locked once teams have registered.' }
     }
     const stranded = [...new Set(registered.map(r => r.branch))].filter(b => !input.branches.includes(b))
     if (stranded.length) return { ok: false as const, error: `${stranded.join(', ')} already ${stranded.length > 1 ? 'have' : 'has'} teams in this contest. Remove those teams first.` }

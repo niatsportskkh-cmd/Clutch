@@ -1,44 +1,43 @@
-'use client'
-import type { CSSProperties } from 'react'
+import Image from 'next/image'
 import type { GameView } from '@/lib/tournaments'
+import { ART } from '@/lib/game-art'
 import { teamLabel } from '@/lib/games'
 import { Button } from './Button'
-import { GlyphIcon } from './GlyphIcon'
-import { Panel } from './Panel'
 import { TeamCount } from './TeamCount'
-import { useSceneHover } from './scene/SceneTarget'
 
-/** A fixture row on desktop, a swipe card on phones. Hovering or focusing it points the swarm at this game. */
+/**
+ * A contest dressed in its game: the publisher's key art behind, the character at the edge, the logo on top.
+ * Hover (mouse) or keyboard focus pushes the art in and lifts the character. CSS only; nothing touches the swarm.
+ */
 export function GameCard({ game }: { game: GameView }) {
-  const hover = useSceneHover(game.glyph, game.hue)
+  const a = ART[game.game]
   return (
-    <article className="hue h-full" style={{ '--hue': game.hue } as CSSProperties} {...hover}>
-      <Panel className="h-full transition-transform duration-500 ease-spring active:scale-[0.985] lg:active:scale-100" inner="flex h-full flex-col gap-5 p-5 lg:flex-row lg:items-center lg:gap-6 lg:p-6">
-        <div className="flex min-w-0 flex-1 items-start gap-4">
-          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-accent/12 text-accent ring-1 ring-inset ring-accent/25">
-            <GlyphIcon glyph={game.glyph} size={30} />
-          </span>
-          <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm font-semibold text-accent">
-              {game.gameName}
-              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-xs font-semibold">Free</span>
-            </p>
-            <h3 className="display mt-1.5 text-[1.35rem] text-text lg:text-2xl">{game.title}</h3>
-            <p className="mt-2 text-[0.95rem] font-medium text-text">{game.startsLabel}</p>
-            <p className="text-sm text-muted">{teamLabel(game.teamSize)}{game.mode && `, ${game.mode}`}</p>
-            {game.locations.length > 0 && <p className="mt-0.5 text-sm text-muted">{game.locations.join(' · ')}</p>}
-          </div>
+    <article className="game-card relative isolate flex min-h-[27rem] overflow-hidden rounded-[1.75rem] bg-surface ring-1 ring-white/10 has-focus-visible:ring-2 has-focus-visible:ring-accent sm:min-h-72">
+      <Image src={a.art} alt="" fill sizes="(min-width: 896px) 896px, 100vw" className="card-art -z-20 object-cover opacity-60" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,#050505_42%,rgb(5_5_5/0.2)_100%)] sm:bg-[linear-gradient(90deg,#050505_30%,rgb(5_5_5/0.75)_58%,rgb(5_5_5/0.1))]" />
+      {/* a character stands at the edge; a game with no character (Matiks) shows its phone, tilted */}
+      <div aria-hidden className={`card-hero pointer-events-none absolute -z-10 ${a.cutout
+        ? 'top-2 right-0 h-[52%] w-[62%] sm:top-6 sm:bottom-0 sm:h-auto sm:w-[40%]'
+        : 'top-5 right-[10%] h-[38%] w-[36%] rotate-[7deg] sm:top-[12%] sm:right-[10%] sm:h-[80%] sm:w-[24%]'}`}>
+        <Image src={a.hero} alt="" fill sizes="(min-width: 640px) 360px, 62vw" className="object-contain object-bottom" />
+      </div>
+      <div className="flex flex-1 flex-col justify-end gap-3 p-5 sm:max-w-[62%] sm:justify-center sm:p-7">
+        <div className="flex items-center gap-3">
+          <Image src={a.logo} alt={game.gameName} sizes="200px" className="h-auto max-h-8 w-auto max-w-44" />
+          <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-xs font-semibold text-text">Free</span>
         </div>
-        <div className="mt-auto flex flex-col gap-4 lg:mt-0 lg:w-60 lg:shrink-0">
-          <TeamCount teams={game.teams} open={game.open} />
-          <div className="flex gap-2">
-            <Button href={`/games/${game.slug}/register`} disabled={!game.open} className="flex-1 px-4">
-              {game.open ? 'Register' : 'Closed'}
-            </Button>
-            <Button href={`/games/${game.slug}`} variant="secondary" className="px-4">Details</Button>
-          </div>
+        <h3 className="display text-[1.8rem] text-text sm:text-[2.1rem]">{game.title}</h3>
+        <div>
+          <p className="font-medium text-text">{game.startsLabel}</p>
+          <p className="text-sm text-muted">{teamLabel(game.teamSize)}{game.mode && `, ${game.mode}`}</p>
+          {game.locations.length > 0 && <p className="text-sm text-muted">{game.locations.join(', ')}</p>}
         </div>
-      </Panel>
+        <TeamCount teams={game.teams} open={game.open} solo={game.teamSize === 1} className="max-w-72" />
+        <div className="flex gap-2">
+          <Button href={`/games/${game.slug}/register`} disabled={!game.open} className="px-7">{game.open ? 'Register' : 'Closed'}</Button>
+          <Button href={`/games/${game.slug}`} variant="secondary" className="px-5">Details</Button>
+        </div>
+      </div>
     </article>
   )
 }

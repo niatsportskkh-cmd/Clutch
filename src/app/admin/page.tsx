@@ -1,10 +1,9 @@
-import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { requireAdmin } from '@/lib/admin'
 import { formatIst } from '@/lib/time'
 import { listAll, countTeams } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
-import { GlyphIcon } from '@/components/GlyphIcon'
+import { GameIcon } from '@/components/GameIcon'
 import { Panel } from '@/components/Panel'
 import { setStatusAction } from './actions'
 import { BackLink } from '@/components/BackLink'
@@ -31,9 +30,9 @@ export default async function AdminHome() {
       {all.length === 0 && <p className="text-lg text-muted">No games yet. Add the first one and it shows up on the home page as soon as its status is Open.</p>}
       <ul className="flex flex-col gap-3">
         {all.map(t => (
-          <li key={t.slug} className="hue" style={{ '--hue': t.hue } as CSSProperties}>
+          <li key={t.slug}>
             <Panel inner="flex flex-wrap items-center gap-x-6 gap-y-3 p-4 sm:p-5">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/12 text-accent ring-1 ring-inset ring-accent/25"><GlyphIcon glyph={t.glyph} size={22} /></span>
+              <GameIcon game={t.game} size={44} />
               <div className="min-w-0 flex-1 basis-56">
                 <p className="text-sm font-semibold text-accent">{t.gameName}</p>
                 <Link href={`/admin/games/${t._id.toHexString()}`} className="display block truncate text-xl hover:underline hover:underline-offset-4">{t.title}</Link>

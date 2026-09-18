@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { getTarget, setActiveStage, stages, subscribe, type Target } from './scene-store'
-import { field, shapeFor } from './shapes'
+import { GAMES } from '@/lib/games'
+import { field, loadMasks, shapeFor } from './shapes'
 
 const TAU = Math.PI * 2
 const MORPH_S = 1.6
@@ -116,7 +117,7 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
   let shapeKey = ''
   let reduced = matchMedia('(prefers-reduced-motion: reduce)').matches
   let raf = 0, last = 0, time = 0, rot = 0, burstT = -1, frames = 0, frameSum = 0, halved = false
-  let needsResize = true, ptrX = 99, ptrY = 99
+  let needsResize = true, ptrX = 99, ptrY = 99, disposed = false
   let activeEl: HTMLElement | null = null, activeT: Target | null | undefined
   const goalColor = [1, 1, 1], color = [1, 1, 1]
   let goalOpacity = 0, anchorX = 0, anchorY = 0, scale = 1
@@ -246,9 +247,12 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
 
   retarget(target) // first morph: from the loose field into whatever the page asked for
   start()
+  // masks land after the first frame: re-aim once they have, so a game page opened directly still gets its logo
+  loadMasks().then(() => { if (!disposed && (GAMES as readonly string[]).includes(target.shape)) { shapeKey = ''; retarget(target) } })
 
   return {
     dispose() {
+      disposed = true
       stop()
       unsubscribe()
       window.removeEventListener('pointermove', onPointer)

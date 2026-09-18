@@ -28,7 +28,7 @@ export default async function CollegesPage({ searchParams }: { searchParams: Pro
         <h1 className="display mt-4 text-4xl sm:text-5xl">Colleges</h1>
         <p className="mt-3 max-w-[64ch] text-lg text-muted">
           Every college and the city it is in. Students are listed under one of these, contests are opened to a set of them,
-          and a team&apos;s location comes from its college — so this list is what makes those filters mean anything.
+          and a team&apos;s location comes from its college, so this list is what makes those filters mean anything.
         </p>
       </div>
 

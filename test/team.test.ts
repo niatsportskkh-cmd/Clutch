@@ -4,7 +4,8 @@ import { ObjectId } from 'mongodb'
 import { getClient, db } from '../src/lib/db.ts'
 import { saveBranch } from '../src/lib/branches.ts'
 import { saveStudent } from '../src/lib/students.ts'
-import { registerTeam, editTeam, adminEditTeam, cancelTeam, saveTournament, deleteTournament, tournaments, teams, listMine, listTeams, visibleTo } from '../src/lib/tournaments.ts'
+import { registerTeam, editTeam, adminEditTeam, cancelTeam, saveTournament, deleteTournament, tournaments, teams, listMine, listOpen, listTeams, visibleTo } from '../src/lib/tournaments.ts'
+import { tournamentInput } from '../src/lib/schemas.ts'
 
 const KKH = 'KKH', VJ = 'Vignana Jyothi'
 
@@ -19,16 +20,21 @@ const captain = (collegeId: string, branch = KKH, id = `u-${collegeId}`) =>
 
 const roster = (ids: string[]) => ({ teamName: 'Team', players: ids.map(collegeId => ({ collegeId, inGameId: `ign-${collegeId}` })) })
 
+// Inserted directly, so teamSize 2 keeps rosters short. saveTournament would make BGMI a squad of 4.
 async function contest(over: Record<string, unknown> = {}) {
   const _id = new ObjectId()
   await tournaments().insertOne({
-    _id, slug: _id.toHexString(), game: 'bgmi', gameName: 'BGMI', title: 'T', mode: '', glyph: 'drop', hue: 80,
+    _id, slug: _id.toHexString(), game: 'bgmi', gameName: 'BGMI', title: 'T', mode: '',
     startsAt: new Date(Date.now() + 864e5), regClosesAt: new Date(Date.now() + 864e5),
     teamSize: 2, branches: [KKH, VJ], requireInGameId: true,
     rules: '', prize: '', status: 'open', room: null, createdAt: new Date(), updatedAt: new Date(), ...over,
   } as never)
   return _id
 }
+
+const form = (game: 'freefire' | 'bgmi' | 'codm' | 'valorant' | 'matiks') => ({
+  game, title: 'Test Cup', mode: '', startsAt: '2030-01-01T20:00', regClosesAt: '', requireInGameId: true, rules: '', prize: '', status: 'open' as const,
+})
 
 before(async () => {
   assert.match(db.databaseName, /test/)
@@ -180,17 +186,36 @@ test('the admin table filters by contest, college and location, and searches pla
   assert.equal((await listTeams({ q: 'a(b' })).total, 0) // unescaped, this would throw
 })
 
+test('the contest form cannot carry a team size or a game name', () => {
+  const parsed = tournamentInput.parse({ ...form('bgmi'), branches: [KKH], teamSize: '9', gameName: 'Fake' })
+  assert.equal('teamSize' in parsed, false)
+  assert.equal('gameName' in parsed, false)
+})
+
+test('team size and name come from the game, and a retired game is hidden from players', async () => {
+  const made = await saveTournament(null, { ...form('valorant'), branches: [KKH] })
+  const t = (await tournaments().findOne({ _id: (made as { id: ObjectId }).id }))!
+  assert.deepEqual([t.gameName, t.teamSize], ['Valorant', 5])
+  const solo = await saveTournament(null, { ...form('matiks'), branches: [KKH] })
+  assert.equal((await tournaments().findOne({ _id: (solo as { id: ObjectId }).id }))!.teamSize, 1)
+
+  const retired = await contest({ game: 'custom', gameName: 'Code Sprint' })
+  const open = (await listOpen()).map(x => x._id.toHexString())
+  assert.equal(open.includes(retired.toHexString()), false)
+  assert.equal(open.includes(t._id.toHexString()), true)
+  const [a, b] = [await student(600), await student(601)]
+  assert.deepEqual(await registerTeam(retired, captain(a), roster([a, b])), { ok: false, error: { code: 'not_found' } })
+})
+
 test('contest edits cannot strand teams that already registered', async () => {
-  const c = await contest()
-  const [a, b] = [await student(400), await student(401)]
-  await registerTeam(c, captain(a), roster([a, b]))
-  const base = {
-    game: 'bgmi' as const, gameName: 'BGMI', title: 'T', mode: '', glyph: 'drop' as const, hue: 80,
-    startsAt: '2030-01-01T20:00', regClosesAt: '', requireInGameId: true, rules: '', prize: '', status: 'open' as const,
-  }
-  assert.match((await saveTournament(c, { ...base, teamSize: 4, branches: [KKH, VJ] }) as { error: string }).error, /Team size is locked/)
-  assert.match((await saveTournament(c, { ...base, teamSize: 2, branches: [VJ] }) as { error: string }).error, /KKH already has teams/)
-  assert.equal((await saveTournament(c, { ...base, teamSize: 2, branches: [KKH] })).ok, true) // dropping an unused college is fine
+  const made = await saveTournament(null, { ...form('bgmi'), branches: [KKH, VJ] })
+  const c = (made as { id: ObjectId }).id
+  const squad = await Promise.all([400, 401, 402, 403].map(n => student(n)))
+  assert.equal((await registerTeam(c, captain(squad[0]), roster(squad))).ok, true)
+
+  assert.match((await saveTournament(c, { ...form('valorant'), branches: [KKH, VJ] }) as { error: string }).error, /game is locked/)
+  assert.match((await saveTournament(c, { ...form('bgmi'), branches: [VJ] }) as { error: string }).error, /KKH already has teams/)
+  assert.equal((await saveTournament(c, { ...form('bgmi'), branches: [KKH] })).ok, true) // dropping an unused college is fine
   assert.equal(await deleteTournament(c), false) // teams registered
   await cancelTeam((await teams().findOne({ tournamentId: c }))!._id, null)
   assert.equal(await deleteTournament(c), true)

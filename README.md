@@ -1,6 +1,6 @@
 # Clutch
 
-Free-entry inter-college contests. An admin loads the colleges and the student roster; a student signs up only if their college ID and NIAT registered number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs — names and numbers come from the roster, and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
+Free-entry inter-college contests in five games: Free Fire MAX and BGMI (squads of 4), COD Mobile and Valorant (teams of 5) and Matiks (solo). The game sets the team size; nobody can change it. An admin loads the colleges and the student roster; a student signs up only if their college ID and NIAT registered number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs (names and numbers come from the roster), and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
 
 Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth.
 
@@ -21,6 +21,7 @@ Three rules hold the model together, and each has a test:
 1. **A person is identified by college ID, never by account.** A teammate who never filled a form still sees the team, because membership is matched on their roster ID.
 2. **A team is single-college by construction.** Its college is the captain's roster row, so admin filters by college and location cannot be wrong.
 3. **One person, one team per contest.** Enforced by a unique index on `(tournamentId, players.collegeId)`, so two captains racing for the same player cannot both win.
+4. **One in-game ID, one player per contest.** Nobody can enter an in-game ID that another player in the same contest already uses, on their own team or any other, whatever the letter case. Checked in `findClash`, which captain registration, captain edits and admin edits all go through.
 
 ## Run it locally
 
@@ -29,7 +30,7 @@ podman run -d --name clutch-mongo -p 27017:27017 docker.io/library/mongo:8   # f
 podman start clutch-mongo                                                     # after a reboot
 cp .env.example .env.local      # then fill BETTER_AUTH_SECRET:  openssl rand -base64 32
 npm install
-npm run seed                    # 3 colleges, 48 students, 4 contests   (-- --reset wipes them)
+npm run seed                    # 3 colleges, 48 students, 5 contests   (-- --reset wipes them)
 npm run dev                     # http://localhost:3000
 npm test                        # team rules, college scoping, role guards, roster import, IST time, CSV, redirect guard
 ```
@@ -69,14 +70,15 @@ Indexes are created on first use. Load the colleges and the student roster at `/
 - `src/lib/tournaments.ts` holds every contest and team rule: the roster lookup, the single-college check, the one-team-per-person index, captain edits, admin edits. No Next imports, so `node --test` runs it directly.
 - `src/lib/students.ts` and `src/lib/branches.ts` are the roster and the college list, both with CSV import. `src/lib/users.ts` has the role.
 - `src/components/scene/` is the swarm. `<SceneStage />` is an empty box the swarm flies into, so CSS decides where the 3D sits at each breakpoint. `<SceneTarget />` sets a page's shape and colour.
-- `src/lib/games.ts` has the game presets and the mark paths. The same path draws the DOM icon and the particle shape.
+- `src/lib/games.ts` is the five games: name, team size, in-game ID hint. It has no imports, so tests and the swarm can load it. Contests saved for any other game stay in the database but players never see them.
+- `src/lib/game-art.ts` imports each game's official art from `src/assets/games/<game>/` (every file's source is in `src/assets/games/SOURCES.md`). `public/games/<game>/mask.png` is the logo the swarm draws, and Valorant and Free Fire MAX have a `loop.mp4`.
 - `scripts/shots.mjs` takes headless Chrome screenshots: `node scripts/shots.mjs /@home --only phone`.
 
 ## Known ceilings
 
 - Team counts refresh by polling every 20 s, not push.
 - A contest another college cannot enter serves the not-found page, but with HTTP 200 rather than 404. The content is hidden; only the status code is a soft 404, and the same is true of `/admin` for non-admins. That is how `notFound()` behaves in a dynamic route here.
-- A signed-out visitor sees every open contest on the home page; the college gate applies once they log in. Filter `listOpen()` differently if that should be hidden too.
+- A signed-out visitor sees every open contest on the Games page; the college gate applies once they log in. Filter `listOpen()` differently if that should be hidden too.
 - Mobile numbers and college IDs are never verified against the student themselves, only against the roster. Someone who knows a classmate's college ID can put them on a team; the teammate sees it in My games and asks the captain to change it.
 - No payments, brackets, results or image uploads.
 - No password reset. It was removed on purpose and comes back later with a different approach. The site sends no email at all.

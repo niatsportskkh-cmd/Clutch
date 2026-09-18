@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useRef, type FocusEvent, type PointerEvent, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { addStage, setBase, setOverride, type Shape, type Target } from './scene-store'
 
 type Props = { shape: Shape; hue: number | null; teams?: number; burst?: boolean }
@@ -35,23 +35,4 @@ export function SceneFocus({ children, className, ...p }: Props & { children: Re
     return () => { io.disconnect(); setOverride(null, owner) }
   }, [p.shape, p.hue, p.teams]) // eslint-disable-line react-hooks/exhaustive-deps
   return <div ref={ref} className={className}>{children}</div>
-}
-
-/**
- * Hover/focus handlers that point the swarm at something. Mouse and keyboard only: a touch also fires
- * pointerenter, and phones already retarget through GameList's stage. Checked per event, not by media
- * query, so touch-screen laptops work with either input.
- */
-export function useSceneHover(shape: Shape, hue: number | null) {
-  return useMemo(() => {
-    const owner = {}
-    const on = () => setOverride({ shape, hue }, owner)
-    const off = () => setOverride(null, owner)
-    return {
-      onPointerEnter: (e: PointerEvent) => { if (e.pointerType === 'mouse') on() },
-      onPointerLeave: off,
-      onFocus: (e: FocusEvent) => { if (e.target.matches(':focus-visible')) on() },
-      onBlur: off,
-    }
-  }, [shape, hue])
 }

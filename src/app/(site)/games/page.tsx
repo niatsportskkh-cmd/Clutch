@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { getUser } from '@/lib/auth'
+import { GAME, GAMES, isGame } from '@/lib/games'
 import { openViews } from '@/lib/tournaments'
 import { AutoRefresh } from '@/components/AutoRefresh'
 import { BackLink } from '@/components/BackLink'
 import { Button } from '@/components/Button'
 import { GameCard } from '@/components/GameCard'
+import { GameIcon } from '@/components/GameIcon'
 import { SceneTarget } from '@/components/scene/SceneTarget'
 
 export const dynamic = 'force-dynamic'
@@ -15,13 +17,14 @@ const PER_PAGE = 12
 type Search = { game?: string; page?: string }
 
 export default async function GamesPage({ searchParams }: { searchParams: Promise<Search> }) {
-  const { game = '', page: rawPage = '1' } = await searchParams
+  const { game: raw = '', page: rawPage = '1' } = await searchParams
+  const game = isGame(raw) ? raw : '' // keyed by game, e.g. ?game=bgmi; anything else means every game
   const user = await getUser()
   // ponytail: loads every open contest and pages in memory, because the filter chips need the whole set anyway.
   // Open contests are a few dozen at most; move to skip/limit in listOpen if a college ever runs hundreds at once.
   const all = await openViews(user?.branch ?? null)
-  const gameNames = [...new Set(all.map(g => g.gameName))].sort()
-  const shown = game ? all.filter(g => g.gameName === game) : all
+  const present = GAMES.filter(k => all.some(g => g.game === k)) // catalogue order, only games with something open
+  const shown = game ? all.filter(g => g.game === game) : all
   const pages = Math.max(1, Math.ceil(shown.length / PER_PAGE))
   const page = Math.min(pages, Math.max(1, Number(rawPage) || 1))
   const rows = shown.slice((page - 1) * PER_PAGE, page * PER_PAGE)
@@ -32,7 +35,7 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
     if (!p.get('game')) p.delete('game')
     return `/games${p.size ? `?${p}` : ''}`
   }
-  const chip = 'inline-flex min-h-10 items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ring-1 ring-inset transition-colors duration-300'
+  const chip = 'inline-flex min-h-10 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-semibold ring-1 ring-inset transition-colors duration-300'
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
@@ -50,14 +53,15 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
       </header>
 
       {/* only worth a row when there is something to choose between */}
-      {gameNames.length > 1 && (
+      {present.length > 1 && (
         <nav aria-label="Filter by game" className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
-          {['', ...gameNames].map(name => {
-            const active = name === game
+          {(['', ...present] as const).map(k => {
+            const active = k === game
             return (
-              <Link key={name || 'all'} href={link({ game: name, page: '1' })} aria-current={active ? 'page' : undefined}
-                className={`${chip} ${active ? 'bg-accent text-ink ring-accent' : 'text-muted ring-line hover:text-text'}`}>
-                {name || 'All'}
+              <Link key={k || 'all'} href={link({ game: k, page: '1' })} aria-current={active ? 'page' : undefined}
+                className={`${chip} ${active ? 'bg-accent text-ink ring-accent' : 'bg-white/[0.04] text-muted ring-line hover:text-text'}`}>
+                {k && <GameIcon game={k} size={22} className="-ml-2" />}
+                {k ? GAME[k].name : 'All'}
               </Link>
             )
           })}
@@ -71,7 +75,7 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
             : 'New matches show up here as soon as they are announced.'}
         </p>
       ) : rows.length === 0 ? (
-        <p className="text-lg text-muted">No open {game} contests. <Link href="/games" className="text-text underline underline-offset-4">See every game</Link>.</p>
+        <p className="text-lg text-muted">No open {game && GAME[game].name} contests. <Link href="/games" className="text-text underline underline-offset-4">See every game</Link>.</p>
       ) : (
         <ul className="flex flex-col gap-4">
           {rows.map(g => <li key={g.slug} className="row-in"><GameCard game={g} /></li>)}

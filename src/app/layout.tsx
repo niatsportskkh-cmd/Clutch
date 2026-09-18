@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 
 export const metadata: Metadata = {
   title: { default: 'Clutch: free esports matches', template: '%s | Clutch' },
-  description: 'Free-entry esports matches. Pick a game, add your roster, claim a slot and get the room ID right here.',
+  description: 'Free inter-college esports contests in Free Fire MAX, BGMI, COD Mobile, Valorant and Matiks.',
 }
 export const viewport: Viewport = { themeColor: '#050505', colorScheme: 'dark' }
 
@@ -25,6 +25,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <footer className="mx-auto flex w-full max-w-[1320px] flex-wrap items-center justify-between gap-3 px-4 pb-10 text-sm text-muted sm:px-8">
           <p>Clutch. Free-entry esports matches.</p>
           <p>Entry is always free. No payments are taken on this site.</p>
+          <p className="w-full text-xs leading-relaxed text-muted/70">
+            Free Fire, BGMI, Call of Duty, VALORANT and Matiks are trademarks of Garena, KRAFTON, Activision, Riot Games and Matiks, whose art appears here.
+            Clutch is an independent college event and is not endorsed by or affiliated with any of them. Clutch was created under Riot Games&apos; &ldquo;Legal Jibber Jabber&rdquo; policy using assets owned by Riot Games.
+          </p>
         </footer>
       </body>
     </html>

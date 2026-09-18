@@ -1,10 +1,11 @@
 import type { CSSProperties } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
-import { PRESETS, teamLabel } from '@/lib/games'
+import { GAME, isGame, teamLabel } from '@/lib/games'
 import { formatIst } from '@/lib/time'
 import { getBySlug, isRegOpen, myTeam, visibleTo } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
+import { GameBanner } from '@/components/GameBanner'
 import { Panel } from '@/components/Panel'
 import { SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
 import { RegisterForm } from './RegisterForm'
@@ -18,7 +19,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   const { slug } = await params
   const { edit, saved } = await searchParams
   const t = await getBySlug(slug)
-  if (!t || t.status === 'draft') notFound()
+  if (!t || t.status === 'draft' || !isGame(t.game)) notFound()
   const user = await getUser()
   if (!user) redirect(`/login?next=${encodeURIComponent(`/games/${slug}/register`)}`)
   if (!visibleTo(t, user.branch)) notFound() // another college's contest does not exist as far as this account is concerned
@@ -32,12 +33,16 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   const done = team && !editing
 
   return (
-    <div className="hue lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12" style={{ '--hue': t.hue } as CSSProperties}>
-      {done ? <SceneTarget shape="check" hue={t.hue} burst /> : <SceneTarget shape={t.glyph} hue={t.hue} />}
+    <div className="lg:grid lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+      {done ? <SceneTarget shape="check" hue={null} burst /> : <SceneTarget shape={t.game} hue={null} />}
+
+      <div className="flex flex-col gap-6 lg:col-span-2">
+        <BackLink href={`/games/${slug}`}>{t.title}</BackLink>
+        <GameBanner game={t.game} className="mb-10 h-44 sm:h-56" />
+      </div>
 
       <div className="min-w-0">
-        <BackLink href={`/games/${slug}`}>{t.title}</BackLink>
-        <SceneStage className="h-[28dvh] min-h-48 lg:hidden" />
+        {done && <SceneStage className="h-[28dvh] min-h-48 lg:hidden" />}
         {done ? (
           <div className="rise flex flex-col items-start gap-6">
             {saved && (
@@ -57,17 +62,18 @@ export default async function RegisterPage({ params, searchParams }: Props) {
             <ul style={{ '--i': 3 } as CSSProperties} className="flex w-full max-w-md flex-col gap-1">
               {team.players.map(p => (
                 <li key={p.collegeId} className="flex justify-between gap-3 border-b border-line/60 py-2 last:border-0">
-                  <span className="text-text">{p.name}{p.collegeId === team.captainCollegeId && <span className="ml-2 text-xs text-accent">captain</span>}</span>
+                  <span className="text-text">{p.name}{t.teamSize > 1 && p.collegeId === team.captainCollegeId && <span className="ml-2 text-xs text-accent">captain</span>}</span>
                   <span className="font-mono text-sm text-muted">{p.collegeId}</span>
                 </li>
               ))}
             </ul>
             <p style={{ '--i': 4 } as CSSProperties} className="max-w-[50ch] text-muted">
-              Everyone above sees this team in their own My games. The room ID and password appear there before the match.
-              {team.captainId === user.id && open && ' As captain you can still swap players until registration closes.'}
+              {t.teamSize === 1
+                ? `The room ID and password appear in My games before the match.${open ? ' You can still change your entry until registration closes.' : ''}`
+                : `Everyone above sees this team in their own My games. The room ID and password appear there before the match.${team.captainId === user.id && open ? ' As captain you can still swap players until registration closes.' : ''}`}
             </p>
             <div style={{ '--i': 5 } as CSSProperties} className="flex flex-wrap gap-3">
-              {team.captainId === user.id && open && <Button href={`/games/${slug}/register?edit=1`}>Edit team</Button>}
+              {team.captainId === user.id && open && <Button href={`/games/${slug}/register?edit=1`}>{t.teamSize === 1 ? 'Edit entry' : 'Edit team'}</Button>}
               <Button href="/me" variant={team.captainId === user.id && open ? 'secondary' : 'primary'}>My games</Button>
               <Button href={`/games/${slug}`} variant="secondary">Game page</Button>
             </div>
@@ -75,13 +81,13 @@ export default async function RegisterPage({ params, searchParams }: Props) {
         ) : (
           <>
             <p className="font-semibold text-accent">{t.gameName}, {teamLabel(t.teamSize).toLowerCase()}</p>
-            <h1 className="display mt-2 text-[clamp(2rem,6.5vw,3.25rem)]">{editing ? 'Edit your team' : t.title}</h1>
+            <h1 className="display mt-2 text-[clamp(2rem,6.5vw,3.25rem)]">{editing ? (t.teamSize === 1 ? 'Edit your entry' : 'Edit your team') : t.title}</h1>
             <p className="mt-4 mb-10 max-w-[54ch] text-lg text-muted">
-              {formatIst(t.startsAt)}. Registration closes {formatIst(t.regClosesAt)}, and there is no cap on teams.
-              {editing && ' Changes replace the whole roster.'}
+              {formatIst(t.startsAt)}. Registration closes {formatIst(t.regClosesAt)}, and there is no cap on {t.teamSize === 1 ? 'players' : 'teams'}.
+              {editing && t.teamSize > 1 && ' Changes replace the whole roster.'}
             </p>
             <RegisterForm
-              slug={slug} teamSize={t.teamSize} requireInGameId={t.requireInGameId} idHint={PRESETS[t.game].idHint}
+              slug={slug} teamSize={t.teamSize} requireInGameId={t.requireInGameId} idHint={GAME[t.game].idHint}
               captainCollegeId={user.collegeId ?? ''} captainName={user.name} branch={user.branch ?? ''}
               teamId={editing ? team!._id.toHexString() : undefined}
               initial={editing ? { teamName: team!.teamName, collegeIds: team!.players.map(p => p.collegeId), inGameIds: team!.players.map(p => p.inGameId) } : undefined}

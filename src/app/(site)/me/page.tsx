@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
@@ -8,7 +7,7 @@ import { AutoRefresh } from '@/components/AutoRefresh'
 import { Button } from '@/components/Button'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { Countdown } from '@/components/Countdown'
-import { GlyphIcon } from '@/components/GlyphIcon'
+import { GameIcon } from '@/components/GameIcon'
 import { Panel } from '@/components/Panel'
 import { RoomPanel } from '@/components/RoomPanel'
 import { SignOutButton } from '@/components/SignOutButton'
@@ -50,11 +49,11 @@ export default async function MePage() {
         const captain = reg.captainId === user.id
         const open = isRegOpen(t, now)
         return (
-        <article key={reg._id.toHexString()} className="hue flex flex-col gap-3" style={{ '--hue': t.hue } as CSSProperties}>
+        <article key={reg._id.toHexString()} className="flex flex-col gap-3">
           <Panel inner="flex flex-col gap-5 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-semibold text-accent"><GlyphIcon glyph={t.glyph} size={18} /> {t.gameName}</p>
+                <p className="flex items-center gap-2 text-sm font-semibold text-accent"><GameIcon game={t.game} size={20} /> {t.gameName}</p>
                 <h2 className="display mt-1.5 text-2xl"><Link href={`/games/${t.slug}`} className="hover:underline hover:underline-offset-4">{t.title}</Link></h2>
                 <p className="mt-2 font-medium text-text">{formatIst(t.startsAt)}</p>
                 {t.startsAt > now && <p className="text-sm text-muted">Starts in <Countdown to={t.startsAt.toISOString()} className="font-semibold text-text" /></p>}

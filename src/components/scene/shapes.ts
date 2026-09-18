@@ -1,4 +1,4 @@
-import { GLYPH_PATHS } from '@/lib/games'
+import { GAMES, type Game } from '@/lib/games'
 import type { Target } from './scene-store'
 
 // Every generator returns count*3 floats in roughly a [-1.6, 1.6] box, with points in RANDOM order:
@@ -54,22 +54,16 @@ function trophy(count: number) {
   return out
 }
 
-/** Rasterise a 100x100 SVG path and scatter points over its filled pixels. */
-function fromPath({ d, stroke }: { d: string; stroke?: number }, count: number, depth = 0.22) {
-  const N = 256
+const CHECK = 'M20 54l20 20 42-46' // the "you're in" burst: a stroke 12 wide in a 100x100 box
+
+function canvas(N: number) {
   const cv = document.createElement('canvas')
   cv.width = cv.height = N
-  const ctx = cv.getContext('2d', { willReadFrequently: true })
-  if (!ctx) return field(count)
-  ctx.scale(N / 100, N / 100)
-  const path = new Path2D(d)
-  if (stroke) {
-    ctx.lineWidth = stroke; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#fff'
-    ctx.stroke(path)
-  } else {
-    ctx.fillStyle = '#fff'
-    ctx.fill(path, 'evenodd')
-  }
+  return cv.getContext('2d', { willReadFrequently: true })
+}
+
+/** Scatter points over a canvas's opaque pixels, fitted to a 3-unit box so every shape has the same visual weight. */
+function fromAlpha(ctx: CanvasRenderingContext2D, N: number, count: number, depth = 0.22) {
   const alpha = ctx.getImageData(0, 0, N, N).data
   const filled: number[] = []
   let x0 = N, x1 = 0, y0 = N, y1 = 0
@@ -81,7 +75,6 @@ function fromPath({ d, stroke }: { d: string; stroke?: number }, count: number, 
   }
   if (!filled.length) return field(count)
 
-  // fit the drawn bounds to a 3-unit box so every glyph has the same visual weight
   const k = 3 / Math.max(x1 - x0 + 1, y1 - y0 + 1), cx = (x0 + x1 + 1) / 2, cy = (y0 + y1 + 1) / 2
   const out = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
@@ -91,6 +84,30 @@ function fromPath({ d, stroke }: { d: string; stroke?: number }, count: number, 
     out[i * 3 + 2] = (rand() - 0.5) * depth
   }
   return out
+}
+
+function check(count: number) {
+  const N = 256, ctx = canvas(N)
+  if (!ctx) return field(count)
+  ctx.scale(N / 100, N / 100)
+  ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#fff'
+  ctx.stroke(new Path2D(CHECK))
+  return fromAlpha(ctx, N, count)
+}
+
+// Game logos are public/games/<key>/mask.png: white on transparent, loaded once by loadMasks().
+const masks = new Map<Game, ImageBitmap>()
+export const loadMasks = () => Promise.all(GAMES.map(async g => {
+  try { masks.set(g, await createImageBitmap(await (await fetch(`/games/${g}/mask.png`)).blob())) }
+  catch { /* a missing mask leaves that game on the loose field; nothing else depends on it */ }
+}))
+
+function fromMask(img: ImageBitmap, count: number) {
+  const N = 384, ctx = canvas(N)
+  if (!ctx) return field(count)
+  const k = N / Math.max(img.width, img.height)
+  ctx.drawImage(img, (N - img.width * k) / 2, (N - img.height * k) / 2, img.width * k, img.height * k)
+  return fromAlpha(ctx, N, count)
 }
 
 /**
@@ -128,7 +145,12 @@ export function shapeFor(t: Target, count: number) {
     if (t.shape === 'trophy') pts = trophy(count)
     else if (t.shape === 'field') pts = field(count)
     else if (t.shape === 'teams') pts = teamCloud(Math.max(0, t.teams ?? 0), count)
-    else pts = fromPath(GLYPH_PATHS[t.shape], count)
+    else if (t.shape === 'check') pts = check(count)
+    else {
+      const m = masks.get(t.shape)
+      if (!m) return field(count) // not loaded yet, and not cached, so the logo still arrives
+      pts = fromMask(m, count)
+    }
     if (cache.size > 40) cache.clear() // team counts change over a long session; never grow without bound
     cache.set(key, pts)
   }
