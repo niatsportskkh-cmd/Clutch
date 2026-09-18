@@ -18,7 +18,7 @@ export function PromoteForm() {
         error={failed?.error}
         hint={failed ? undefined : 'They need a Clutch account already — promote the address they signed up with.'}
       />
-      {state?.ok && <p role="status" className="text-volt">{state.message}</p>}
+      {state?.ok && <p role="status" className="text-text">{state.message}</p>}
       <ConfirmButton
         disabled={pending || !email}
         className="self-start px-8"

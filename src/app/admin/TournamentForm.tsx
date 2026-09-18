@@ -66,7 +66,7 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
                 <p className="mb-2 text-sm font-semibold tracking-wide text-accent uppercase">{location}</p>
                 <div className="flex flex-wrap gap-2">
                   {names.map(n => (
-                    <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-sm font-semibold text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-volt">
+                    <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-4 text-sm font-semibold text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-accent">
                       <input type="checkbox" name="branches" value={n} defaultChecked={initial.branches.includes(n)} className="sr-only" />
                       {n}
                     </label>
@@ -92,7 +92,7 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
           <div className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-2">
               {GLYPHS.map(g => (
-                <label key={g} className="grid h-14 w-14 cursor-pointer place-items-center rounded-2xl text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-volt">
+                <label key={g} className="grid h-14 w-14 cursor-pointer place-items-center rounded-2xl text-muted ring-1 ring-inset ring-line transition-colors duration-300 has-checked:bg-accent/15 has-checked:text-accent has-checked:ring-accent has-focus-visible:outline-2 has-focus-visible:outline-accent">
                   <input type="radio" name="glyph" value={g} checked={glyph === g} onChange={() => setGlyph(g)} className="sr-only" />
                   <GlyphIcon glyph={g} size={28} /><span className="sr-only">{g}</span>
                 </label>
@@ -119,7 +119,7 @@ export function TournamentForm({ id, initial, locked, colleges }: { id: string |
 
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>{pending ? 'Saving' : id ? 'Save changes' : 'Add game'}</Button>
-        <p aria-live="polite" className={state?.ok ? 'text-volt' : 'text-danger'}>{state?.ok ? state.message : state?.error}</p>
+        <p aria-live="polite" className={state?.ok ? 'text-text' : 'text-danger'}>{state?.ok ? state.message : state?.error}</p>
       </div>
     </form>
   )

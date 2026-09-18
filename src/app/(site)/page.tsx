@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { getUser } from '@/lib/auth'
-import { listOpen, toView, countTeams } from '@/lib/tournaments'
-import { listBranches } from '@/lib/branches'
+import { openViews } from '@/lib/tournaments'
 import { AutoRefresh } from '@/components/AutoRefresh'
 import { Button } from '@/components/Button'
 import { Countdown } from '@/components/Countdown'
@@ -19,12 +18,7 @@ const STEPS = [
 export default async function Home() {
   const user = await getUser()
   // signed in: only the contests their college was invited to. Signed out: the public list.
-  const open = await listOpen(user?.branch ?? null)
-  const [counts, colleges] = await Promise.all([countTeams(open.map(t => t._id)), listBranches()])
-  const locationOf = new Map(colleges.map(b => [b.name, b.location]))
-  const games = open.map(t =>
-    toView(t, counts.get(t._id.toHexString()) ?? 0, [...new Set(t.branches.map(b => locationOf.get(b)).filter(Boolean) as string[])]),
-  )
+  const games = await openViews(user?.branch ?? null)
   const next = games[0]
   const teamsIn = games.reduce((n, g) => n + g.teams, 0)
 
@@ -39,7 +33,7 @@ export default async function Home() {
           <div className="rise flex flex-col items-start gap-6">
             {next && (
               <Link href={`/games/${next.slug}`} style={{ '--i': 0 } as React.CSSProperties} className="rounded-full bg-white/[0.06] px-4 py-2 text-sm text-muted ring-1 ring-inset ring-white/10 transition-colors duration-300 hover:text-text">
-                Next up: <span className="font-semibold text-text">{next.title}</span> in <Countdown to={next.startsAt} className="font-semibold text-volt" />
+                Next up: <span className="font-semibold text-text">{next.title}</span> in <Countdown to={next.startsAt} className="font-semibold text-accent" />
               </Link>
             )}
             <h1 style={{ '--i': 1 } as React.CSSProperties} className="display text-[clamp(2.9rem,10.5vw,5.1rem)]">Claim your slot</h1>
@@ -47,7 +41,7 @@ export default async function Home() {
               Free-entry esports matches. Pick a game, add your roster, and get the room ID here before kick-off.
             </p>
             <div style={{ '--i': 3 } as React.CSSProperties} className="flex flex-wrap gap-3">
-              <Button href="#games">See open games</Button>
+              <Button href="/games">See open games</Button>
               {user ? <Button href="/me" variant="secondary">My games</Button> : <Button href="/signup" variant="secondary">Sign up</Button>}
             </div>
           </div>
@@ -60,7 +54,9 @@ export default async function Home() {
               <p className="num mt-3 mb-6 text-muted">
                 {games.length} {games.length === 1 ? 'game' : 'games'} open, {teamsIn} {teamsIn === 1 ? 'team' : 'teams'} in so far. Entry is free, and there is no cap on teams.
               </p>
-              <GameList games={games} />
+              {/* the home page is a preview: the full, filterable, paged list is /games */}
+              <GameList games={games.slice(0, 3)} />
+              {games.length > 3 && <Button href="/games" variant="secondary" className="mt-6">See all {games.length} games</Button>}
             </>
           ) : (
             <p className="mt-4 max-w-[48ch] text-lg text-muted">
@@ -76,7 +72,7 @@ export default async function Home() {
           <ol className="mt-8 flex flex-col gap-8">
             {STEPS.map(([title, body], i) => (
               <li key={title} className="flex gap-5">
-                <span className="display num w-12 shrink-0 text-5xl text-volt">{i + 1}</span>
+                <span className="display num w-12 shrink-0 text-5xl text-accent">{i + 1}</span>
                 <div>
                   <h3 className="text-xl font-semibold text-text">{title}</h3>
                   <p className="mt-1 max-w-[52ch] text-muted">{body}</p>

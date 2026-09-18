@@ -16,7 +16,7 @@ export function RoomForm({ id, room }: { id: string; room: { id: string; passwor
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" name="intent" value="publish" disabled={pending}>{room ? 'Update room details' : 'Publish room details'}</Button>
         {room && <Button type="submit" name="intent" value="unpublish" variant="secondary" formNoValidate disabled={pending}>Unpublish</Button>}
-        <p aria-live="polite" className={state?.ok ? 'text-volt' : 'text-danger'}>{state?.ok ? state.message : state?.error}</p>
+        <p aria-live="polite" className={state?.ok ? 'text-text' : 'text-danger'}>{state?.ok ? state.message : state?.error}</p>
       </div>
     </form>
   )

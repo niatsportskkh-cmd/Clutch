@@ -24,7 +24,7 @@ export function StudentForm({ initial, colleges }: { initial?: { collegeId: stri
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending} className="px-8">{pending ? 'Saving' : initial ? 'Save changes' : 'Add student'}</Button>
-        <p aria-live="polite" className={state && !state.ok ? 'text-danger' : 'text-volt'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
+        <p aria-live="polite" className={state && !state.ok ? 'text-danger' : 'text-text'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
       </div>
       <p className="text-sm text-muted">An ID already on the list is overwritten, not duplicated.</p>
     </form>

@@ -76,7 +76,7 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
 
   const q = quality()
   const COUNT = q.count
-  const ink = oklch(0.14, 0.02, 285, [0, 0, 0])
+  const ink = oklch(0.115, 0, 0, [0, 0, 0]) // Clutch Black
   renderer.setClearColor(new THREE.Color().setRGB(ink[0], ink[1], ink[2], THREE.SRGBColorSpace), 1) // values are sRGB; three re-encodes on clear
   renderer.setPixelRatio(Math.min(devicePixelRatio, q.dpr))
 
@@ -124,8 +124,8 @@ export function createSwarm(canvas: HTMLCanvasElement): { dispose(): void } {
 
   function retarget(t: Target) {
     target = t
-    if (t.hue === null) oklch(0.93, 0.22, 125, goalColor)
-    else oklch(0.78, 0.17, t.hue, goalColor)
+    // every shape is Clutch Red; t.hue is ignored for the brand's one-accent rule
+    oklch(0.635, 0.251, 28.4, goalColor)
     goalOpacity = t.shape === 'field' ? 0.22 : 0.85
 
     const key = `${t.shape}:${t.teams}`

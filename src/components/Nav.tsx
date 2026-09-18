@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { getUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/users'
@@ -11,8 +12,8 @@ export async function Nav() {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-40 flex justify-center px-3 pt-3 sm:pt-5">
       <nav aria-label="Main" className="pointer-events-auto flex h-14 w-full max-w-3xl items-center gap-1 rounded-full bg-ink/85 pr-2 pl-5 ring-1 ring-white/10 backdrop-blur-xl">
-        <Link href="/" className="display mr-auto text-xl text-text">Clutch</Link>
-        <Link href="/#games" className={`${item} max-sm:hidden`}>Games</Link>
+        <Link href="/" className="mr-auto shrink-0"><Image src="/logo.png" alt="Clutch" width={480} height={177} priority className="h-8 w-auto" /></Link>
+        <Link href="/games" className={item}>Games</Link>
         {user ? (
           <>
             <Link href="/me" className={item}>My games</Link>
@@ -22,7 +23,7 @@ export async function Nav() {
         ) : (
           <>
             <Link href="/login" className={item}>Log in</Link>
-            <Link href="/signup" className="whitespace-nowrap rounded-full bg-volt px-4 py-2 text-sm font-semibold text-ink transition-transform duration-500 ease-spring active:scale-[0.97]">Sign up</Link>
+            <Link href="/signup" className="whitespace-nowrap rounded-full bg-accent px-4 py-2 text-sm font-semibold text-ink transition-transform duration-500 ease-spring active:scale-[0.97]">Sign up</Link>
           </>
         )}
       </nav>

@@ -14,6 +14,7 @@ import { RoomPanel } from '@/components/RoomPanel'
 import { SignOutButton } from '@/components/SignOutButton'
 import { SceneTarget } from '@/components/scene/SceneTarget'
 import { cancelAction } from './actions'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'My games' }
 
@@ -28,6 +29,7 @@ export default async function MePage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <SceneTarget shape="field" hue={null} />
       <AutoRefresh seconds={30} />
+      <BackLink href="/">Home</BackLink>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="display text-4xl sm:text-5xl">My games</h1>
@@ -40,7 +42,7 @@ export default async function MePage() {
       {mine.length === 0 && (
         <Panel inner="flex flex-col items-start gap-4 p-6">
           <p className="text-lg text-text">You have not registered for anything yet.</p>
-          <Button href="/#games">See open games</Button>
+          <Button href="/games">See open games</Button>
         </Panel>
       )}
 

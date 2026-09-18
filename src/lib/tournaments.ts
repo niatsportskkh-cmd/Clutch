@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb'
 import { randomInt } from 'node:crypto'
 import { db, ensureIndexes } from './db.ts'
-import { getBranch } from './branches.ts'
+import { getBranch, listBranches } from './branches.ts'
 import { students } from './students.ts'
 import { formatIst, istToUtc } from './time.ts'
 import type { Game, Glyph, Status, TournamentInput, TeamInput, RoomInput } from './schemas.ts'
@@ -68,6 +68,16 @@ export const listOpen = (branch: string | null = null) =>
     .find({ status: 'open', startsAt: { $gt: new Date() }, ...(branch ? { branches: branch } : {}) })
     .sort({ startsAt: 1 })
     .toArray()
+
+/** Open contests as cards, soonest first: team counts and each contest's cities filled in. Home and /games share it. */
+export async function openViews(branch: string | null) {
+  const open = await listOpen(branch)
+  const [counts, colleges] = await Promise.all([countTeams(open.map(t => t._id)), listBranches()])
+  const locationOf = new Map(colleges.map(b => [b.name, b.location]))
+  return open.map(t =>
+    toView(t, counts.get(t._id.toHexString()) ?? 0, [...new Set(t.branches.map(b => locationOf.get(b)).filter(Boolean) as string[])]),
+  )
+}
 
 export async function countTeams(ids: ObjectId[]) {
   const rows = await teams().aggregate<{ _id: ObjectId; n: number }>([

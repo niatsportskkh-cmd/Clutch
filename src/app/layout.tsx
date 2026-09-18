@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from 'next'
-import { Archivo, Geist, Geist_Mono } from 'next/font/google'
+import { Teko, Geist, Geist_Mono } from 'next/font/google'
 import SceneCanvas from '@/components/scene/SceneCanvas'
 import { Nav } from '@/components/Nav'
 import './globals.css'
 
-const archivo = Archivo({ variable: '--font-archivo', subsets: ['latin'], axes: ['wdth'] })
+const teko = Teko({ variable: '--font-teko', subsets: ['latin'], weight: ['500', '600', '700'] })
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
@@ -12,11 +12,11 @@ export const metadata: Metadata = {
   title: { default: 'Clutch: free esports matches', template: '%s | Clutch' },
   description: 'Free-entry esports matches. Pick a game, add your roster, claim a slot and get the room ID right here.',
 }
-export const viewport: Viewport = { themeColor: '#0b0b14', colorScheme: 'dark' }
+export const viewport: Viewport = { themeColor: '#050505', colorScheme: 'dark' }
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={`${archivo.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className={`${teko.variable} ${geistSans.variable} ${geistMono.variable} antialiased`}>
       <body className="flex min-h-[100dvh] flex-col">
         {/* mounted once, never remounted: navigation morphs the swarm instead of reloading it */}
         <SceneCanvas />

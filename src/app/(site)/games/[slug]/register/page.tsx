@@ -8,6 +8,7 @@ import { Button } from '@/components/Button'
 import { Panel } from '@/components/Panel'
 import { SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
 import { RegisterForm } from './RegisterForm'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Register' }
 
@@ -35,6 +36,7 @@ export default async function RegisterPage({ params, searchParams }: Props) {
       {done ? <SceneTarget shape="check" hue={t.hue} burst /> : <SceneTarget shape={t.glyph} hue={t.hue} />}
 
       <div className="min-w-0">
+        <BackLink href={`/games/${slug}`}>{t.title}</BackLink>
         <SceneStage className="h-[28dvh] min-h-48 lg:hidden" />
         {done ? (
           <div className="rise flex flex-col items-start gap-6">

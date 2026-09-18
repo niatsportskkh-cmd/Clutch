@@ -7,6 +7,7 @@ import { ImportForm } from '@/components/ImportForm'
 import { Panel } from '@/components/Panel'
 import { importBranchesAction } from './actions'
 import { CollegeForm, RemoveCollege } from './CollegeForms'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Colleges' }
 
@@ -23,7 +24,7 @@ export default async function CollegesPage({ searchParams }: { searchParams: Pro
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       <div>
-        <Button href="/admin" variant="ghost" className="px-3">All games</Button>
+        <BackLink href="/admin">Admin</BackLink>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Colleges</h1>
         <p className="mt-3 max-w-[64ch] text-lg text-muted">
           Every college and the city it is in. Students are listed under one of these, contests are opened to a set of them,

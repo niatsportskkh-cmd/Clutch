@@ -10,6 +10,7 @@ import { Panel } from '@/components/Panel'
 import { deleteTournamentAction, removeTeamAction } from '../../actions'
 import { TournamentForm } from '../../TournamentForm'
 import { RoomForm } from './RoomForm'
+import { BackLink } from '@/components/BackLink'
 
 export default async function ManageGame({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin()
@@ -21,7 +22,7 @@ export default async function ManageGame({ params }: { params: Promise<{ id: str
   return (
     <div className="hue mx-auto flex w-full max-w-3xl flex-col gap-10" style={{ '--hue': t.hue } as CSSProperties}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button href="/admin" variant="ghost" className="px-3">All games</Button>
+        <BackLink href="/admin">Admin</BackLink>
         <Button href={`/games/${t.slug}`} variant="secondary">View public page</Button>
       </div>
       <div>

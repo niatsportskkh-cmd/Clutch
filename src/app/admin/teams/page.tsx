@@ -7,6 +7,7 @@ import { Button } from '@/components/Button'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { Panel } from '@/components/Panel'
 import { removeTeamAction } from '../actions'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Teams' }
 
@@ -32,7 +33,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <div>
-        <Button href="/admin" variant="ghost" className="px-3">All games</Button>
+        <BackLink href="/admin">Admin</BackLink>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Teams</h1>
         <p className="mt-3 max-w-[64ch] text-lg text-muted">
           Every team across every contest. College and location come from the captain&apos;s roster row, so filtering by them is exact.

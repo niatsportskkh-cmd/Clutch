@@ -5,8 +5,8 @@ export function TeamCount({ teams, open, className = '' }: { teams: number; open
       <span className="text-2xl font-semibold text-text">{teams}</span>
       <span className="text-sm text-muted">{teams === 1 ? 'team in' : 'teams in'}</span>
       {open && (
-        <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-volt">
-          <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-volt" />
+        <span className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
+          <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
           Open
         </span>
       )}

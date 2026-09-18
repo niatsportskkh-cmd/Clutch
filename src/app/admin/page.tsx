@@ -7,8 +7,9 @@ import { Button } from '@/components/Button'
 import { GlyphIcon } from '@/components/GlyphIcon'
 import { Panel } from '@/components/Panel'
 import { setStatusAction } from './actions'
+import { BackLink } from '@/components/BackLink'
 
-const STATUS_STYLE = { draft: 'text-muted', open: 'text-volt', closed: 'text-danger', completed: 'text-muted' }
+const STATUS_STYLE = { draft: 'text-muted', open: 'text-text', closed: 'text-danger', completed: 'text-muted' }
 
 export default async function AdminHome() {
   await requireAdmin()
@@ -16,9 +17,10 @@ export default async function AdminHome() {
   const counts = await countTeams(all.map(t => t._id))
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <BackLink href="/">Site</BackLink>
+      <header className="-mt-6 flex flex-wrap items-end justify-between gap-4">
         <h1 className="display text-4xl sm:text-5xl">Games</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button href="/admin/teams" variant="secondary">Teams</Button>
           <Button href="/admin/colleges" variant="secondary">Colleges</Button>
           <Button href="/admin/students" variant="secondary">Students</Button>

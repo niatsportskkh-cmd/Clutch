@@ -9,6 +9,7 @@ import { deleteStudentAction } from './actions'
 import { ImportForm } from '@/components/ImportForm'
 import { StudentForm } from './StudentForm'
 import { importStudentsAction } from './actions'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Students' }
 
@@ -29,7 +30,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-10">
       <div>
-        <Button href="/admin" variant="ghost" className="px-3">All games</Button>
+        <BackLink href="/admin">Admin</BackLink>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Students</h1>
         <p className="mt-3 max-w-[64ch] text-lg text-muted">
           The list every account and every team is checked against. Nobody can sign up unless their college ID and mobile number

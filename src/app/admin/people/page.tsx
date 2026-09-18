@@ -1,11 +1,11 @@
 import { requireAdmin } from '@/lib/admin'
 import { formatIst } from '@/lib/time'
 import { listByRole } from '@/lib/users'
-import { Button } from '@/components/Button'
 import { ConfirmButton } from '@/components/ConfirmButton'
 import { Panel } from '@/components/Panel'
 import { revokeAdminAction } from '../actions'
 import { PromoteForm } from './PromoteForm'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Admins' }
 
@@ -16,7 +16,7 @@ export default async function PeoplePage() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       <div>
-        <Button href="/admin" variant="ghost" className="px-3">All games</Button>
+        <BackLink href="/admin">Admin</BackLink>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Admins</h1>
         <p className="mt-3 max-w-[60ch] text-lg text-muted">
           Admins manage every game and every team, and can make other people admins. Everyone else is a player.

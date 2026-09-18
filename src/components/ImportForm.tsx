@@ -28,7 +28,7 @@ export function ImportForm({ action, columns, noun, maxRows }: Props) {
       {state && !state.ok && <p role="alert" className="text-danger">{state.error}</p>}
       {report && (
         <div role="status" className="flex flex-col gap-2">
-          <p className="text-volt">
+          <p className="text-text">
             {report.added} added, {report.updated} updated{report.unchanged ? `, ${report.unchanged} already correct` : ''}
             {report.failed.length ? `, ${report.failed.length} skipped` : ''}.
           </p>

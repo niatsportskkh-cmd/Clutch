@@ -4,24 +4,25 @@
 @import "tailwindcss" source(none);
 @source "../**/*.{ts,tsx}";
 
-/* Voltage: ink base, acid-lime primary, one accent hue per game.
+/* Black x white x red. Darkness is the arena, white is precision, red is pressure and action.
+   Red is rationed: primary actions, live signals, focus and errors. Success messages are white, never red.
    Shape rule: buttons are pills, panels are 28px (22px inner), inputs are 12px. Nothing else. */
 :root {
-  --ink: oklch(0.14 0.02 285);
-  --surface: oklch(0.19 0.025 285);
-  --raised: oklch(0.235 0.03 285);
-  --line: oklch(0.30 0.03 285);
-  --text: oklch(0.96 0.01 110);
-  --muted: oklch(0.72 0.02 285);
-  --volt: oklch(0.93 0.22 125);
-  --danger: oklch(0.7 0.19 25);
-  --accent: var(--volt);
+  --ink: #050505;      /* Clutch Black */
+  --surface: #111111;  /* Carbon */
+  --raised: #1a1a1a;
+  --line: #2a2a2a;
+  --text: #f2f2f2;     /* Steel White */
+  --muted: #9a9a9a;
+  --red: #ff1a1a;      /* Clutch Red */
+  --danger: var(--red);
+  --accent: var(--red);
   --spring: cubic-bezier(0.32, 0.72, 0, 1);
   color-scheme: dark;
 }
 
-/* A game's colour world: set --hue on any wrapper and everything inside re-derives its accent. */
-.hue { --accent: oklch(0.78 0.17 var(--hue)); }
+/* Games used to each get their own colour from --hue. The brand keeps every game on Clutch Red, so --hue is ignored. */
+.hue { --accent: var(--red); }
 
 @theme inline {
   --color-ink: var(--ink);
@@ -30,19 +31,19 @@
   --color-line: var(--line);
   --color-text: var(--text);
   --color-muted: var(--muted);
-  --color-volt: var(--volt);
+  --color-red: var(--red);
   --color-danger: var(--danger);
   --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-archivo);
+  --font-display: var(--font-teko);
   --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html {
   /* the WebGL canvas paints over this; it is what shows if WebGL is unavailable */
   background:
-    radial-gradient(60rem 40rem at 85% 10%, oklch(0.93 0.22 125 / 0.07), transparent 60%),
+    radial-gradient(60rem 40rem at 85% 10%, rgb(255 26 26 / 0.06), transparent 60%),
     var(--ink);
   color: var(--text);
 }
@@ -52,16 +53,15 @@ body { font-family: var(--font-geist-sans), system-ui, sans-serif; }
   html { scroll-behavior: smooth; }
 }
 
-:focus-visible { outline: 2px solid var(--volt); outline-offset: 3px; border-radius: 6px; }
-::selection { background: var(--volt); color: var(--ink); }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; border-radius: 6px; }
+::selection { background: var(--red); color: var(--text); }
 
-/* Wide, heavy, uppercase: the jersey-lettering voice. Archivo's width axis does the work. */
+/* Teko: tall, condensed, uppercase. The arena-scoreboard voice. */
 .display {
-  font-family: var(--font-archivo), system-ui, sans-serif;
-  font-stretch: 125%;
-  font-weight: 800;
-  line-height: 0.94;
-  letter-spacing: -0.015em;
+  font-family: var(--font-teko), system-ui, sans-serif;
+  font-weight: 600;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   text-wrap: balance;
 }

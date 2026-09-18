@@ -21,7 +21,7 @@ export function CollegeForm({ locations, initial }: { locations: string[]; initi
       </div>
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending} className="px-8">{pending ? 'Saving' : initial ? 'Save changes' : 'Add college'}</Button>
-        <p aria-live="polite" className={state && !state.ok ? 'text-danger' : 'text-volt'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
+        <p aria-live="polite" className={state && !state.ok ? 'text-danger' : 'text-text'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
       </div>
       <p className="text-sm text-muted">{initial
         ? 'Renaming moves its students, their accounts, its contests and its teams to the new name.'

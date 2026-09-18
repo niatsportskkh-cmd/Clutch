@@ -5,6 +5,7 @@ import { getTeam, getById } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
 import { Panel } from '@/components/Panel'
 import { TeamForm } from './TeamForm'
+import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Edit team' }
 
@@ -19,7 +20,7 @@ export default async function EditTeam({ params }: { params: Promise<{ id: strin
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button href="/admin/teams" variant="ghost" className="px-3">All teams</Button>
+        <BackLink href="/admin/teams">All teams</BackLink>
         <Button href={`/admin/games/${t._id.toHexString()}`} variant="secondary">Contest</Button>
       </div>
       <div>

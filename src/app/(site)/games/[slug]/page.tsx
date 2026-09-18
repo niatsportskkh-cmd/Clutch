@@ -14,6 +14,7 @@ import { GlyphIcon } from '@/components/GlyphIcon'
 import { RoomPanel } from '@/components/RoomPanel'
 import { TeamCount } from '@/components/TeamCount'
 import { SceneFocus, SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
+import { BackLink } from '@/components/BackLink'
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -53,6 +54,7 @@ export default async function GamePage({ params }: Props) {
 
       <div className="flex min-w-0 flex-col gap-10">
         <header className="rise flex flex-col items-start gap-5">
+          <BackLink href="/games">All games</BackLink>
           <SceneStage className="h-[30dvh] min-h-52 w-full lg:hidden" />
           <p style={{ '--i': 0 } as CSSProperties} className="flex items-center gap-2.5 font-semibold text-accent">
             <GlyphIcon glyph={t.glyph} size={22} /> {t.gameName}
@@ -74,7 +76,6 @@ export default async function GamePage({ params }: Props) {
                 {!open ? 'Registration closed' : !user ? 'Log in to register' : !mine ? 'Not open to your college' : 'Register free'}
               </Button>
             )}
-            <Button href="/#games" variant="ghost">All games</Button>
           </div>
         </header>
 

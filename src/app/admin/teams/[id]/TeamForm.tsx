@@ -32,7 +32,7 @@ export function TeamForm({ id, teamSize, requireInGameId, branch, captainCollege
       </fieldset>
       <div className="flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>{pending ? 'Saving' : 'Save team'}</Button>
-        <p aria-live="polite" className={state?.ok ? 'text-volt' : 'text-danger'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
+        <p aria-live="polite" className={state?.ok ? 'text-text' : 'text-danger'}>{state ? (state.ok ? state.message : state.error) : ''}</p>
       </div>
     </form>
   )
