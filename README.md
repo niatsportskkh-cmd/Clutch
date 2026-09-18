@@ -1,8 +1,8 @@
 # Clutch
 
-Free-entry inter-college contests. An admin loads the colleges and the student roster; a student signs up only if their college ID and mobile number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs — names and numbers come from the roster, and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
+Free-entry inter-college contests. An admin loads the colleges and the student roster; a student signs up only if their college ID and NIAT registered number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs — names and numbers come from the roster, and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
 
-Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth, Resend.
+Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth.
 
 ## How the pieces fit
 
@@ -36,11 +36,9 @@ npm test                        # team rules, college scoping, role guards, rost
 
 Use `127.0.0.1` in `MONGODB_URI`, not `localhost`. On Fedora `localhost` is IPv6 and rootless podman resets those connections.
 
-With `RESEND_API_KEY` empty, emails (password reset) are printed to the dev server's terminal instead of being sent. Copy the link from there.
-
 ## The student list
 
-Nobody can sign up unless their **college ID and mobile number are both on one row** of the `students` collection. Admins load it at `/admin/students`, either by importing a CSV whose first row names the columns `collegeId, name, phone, branch` (any order, up to 5000 rows) or by adding people one at a time. Re-importing a corrected sheet updates rows rather than duplicating them, because everything upserts on college ID.
+Nobody can sign up unless their **college ID and NIAT registered number are both on one row** of the `students` collection. Admins load it at `/admin/students`, either by importing a CSV whose first row names the columns `collegeId, name, phone, branch` (any order, up to 5000 rows) or by adding people one at a time. Re-importing a corrected sheet updates rows rather than duplicating them, because everything upserts on college ID.
 
 Both sides normalise before they compare: `+91 98765 43210` and `9876543210` are the same number, `2203a51234` and `2203A51234` the same ID. A student's `branch` is copied from their roster row at sign-up and cannot be typed by hand. One college ID gets one account.
 
@@ -61,7 +59,6 @@ After that, `/admin` → **Admins** promotes anyone else who already has an acco
 | `MONGODB_URI` | Atlas connection string ending in `/clutch`. In Atlas, Network Access must allow `0.0.0.0/0` (Vercel has no fixed IPs) |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | The production URL, no trailing slash |
-| `RESEND_API_KEY`, `EMAIL_FROM` | API key from resend.com. `EMAIL_FROM` must use a domain verified in Resend (add its DNS records there), or the send is rejected |
 
 Indexes are created on first use. Load the colleges and the student roster at `/admin/colleges` and `/admin/students` before anyone can sign up.
 
@@ -82,3 +79,4 @@ Indexes are created on first use. Load the colleges and the student roster at `/
 - A signed-out visitor sees every open contest on the home page; the college gate applies once they log in. Filter `listOpen()` differently if that should be hidden too.
 - Mobile numbers and college IDs are never verified against the student themselves, only against the roster. Someone who knows a classmate's college ID can put them on a team; the teammate sees it in My games and asks the captain to change it.
 - No payments, brackets, results or image uploads.
+- No password reset. It was removed on purpose and comes back later with a different approach. The site sends no email at all.

@@ -12,7 +12,7 @@ before(async () => { assert.match(db.databaseName, /test/); await db.dropDatabas
 after(() => getClient().close())
 
 test('bad fields are refused even on an empty database', async () => {
-  assert.deepEqual(await signupGate({ phone: '123', collegeId: 'ADMIN001' }), { ok: false, message: 'Enter a valid mobile number' })
+  assert.deepEqual(await signupGate({ phone: '123', collegeId: 'ADMIN001' }), { ok: false, message: 'Enter a valid NIAT registered number' })
   assert.deepEqual(await signupGate({ phone: '9876543210', collegeId: '!' }), { ok: false, message: 'Enter a valid college ID' })
 })
 
@@ -45,4 +45,5 @@ test('the roster match needs both halves, and one college ID gets one account', 
   const again = await signupGate({ phone: '9000000002', collegeId: '2203A51000' })
   assert.equal(again.ok, false)
   assert.match((again as { message: string }).message, /already exists for this college ID/)
+  assert.doesNotMatch((again as { message: string }).message, /reset/)
 })
