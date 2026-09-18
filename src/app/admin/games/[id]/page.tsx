@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react'
 import { notFound } from 'next/navigation'
 import { requireAdmin } from '@/lib/admin'
+import { isGame } from '@/lib/games'
 import { formatIst, utcToIstInput } from '@/lib/time'
 import { getById, listTeamsFor, isRegOpen } from '@/lib/tournaments'
 import { listBranches } from '@/lib/branches'
@@ -20,14 +20,15 @@ export default async function ManageGame({ params }: { params: Promise<{ id: str
   const [regs, colleges] = await Promise.all([listTeamsFor(t._id), listBranches()])
 
   return (
-    <div className="hue mx-auto flex w-full max-w-3xl flex-col gap-10" style={{ '--hue': t.hue } as CSSProperties}>
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <BackLink href="/admin">Admin</BackLink>
-        <Button href={`/games/${t.slug}`} variant="secondary">View public page</Button>
+        {isGame(t.game) && <Button href={`/games/${t.slug}`} variant="secondary">View public page</Button>}
       </div>
       <div>
         <p className="font-semibold text-accent">{t.gameName}</p>
         <h1 className="display mt-1 text-3xl sm:text-5xl">{t.title}</h1>
+        {!isGame(t.game) && <p className="mt-3 max-w-[60ch] text-muted">This contest is for a game Clutch no longer offers, so players cannot see it. Pick one of the five below, or remove its teams and delete it.</p>}
       </div>
 
       <section className="flex flex-col gap-4">
@@ -90,9 +91,9 @@ export default async function ManageGame({ params }: { params: Promise<{ id: str
         <h2 className="display text-2xl">Game settings</h2>
         <Panel inner="p-5 sm:p-7">
           <TournamentForm id={id} locked={regs.length > 0} colleges={colleges.map(b => ({ name: b.name, location: b.location }))} initial={{
-            game: t.game, gameName: t.gameName, title: t.title, mode: t.mode, glyph: t.glyph, hue: t.hue,
+            game: isGame(t.game) ? t.game : 'freefire', title: t.title, mode: t.mode,
             startsAt: utcToIstInput(t.startsAt), regClosesAt: t.regClosesAt.getTime() === t.startsAt.getTime() ? '' : utcToIstInput(t.regClosesAt),
-            teamSize: t.teamSize, branches: t.branches, requireInGameId: t.requireInGameId, rules: t.rules, prize: t.prize, status: t.status,
+            branches: t.branches, requireInGameId: t.requireInGameId, rules: t.rules, prize: t.prize, status: t.status,
           }} />
         </Panel>
       </section>

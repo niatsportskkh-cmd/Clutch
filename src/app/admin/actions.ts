@@ -14,7 +14,7 @@ const fresh = () => revalidatePath('/', 'layout')
 
 export async function saveTournamentAction(id: string | null, _prev: FormState, form: FormData): Promise<FormState> {
   await requireAdmin()
-  const values = Object.fromEntries([...form].map(([k, v]) => [k, String(v)]))
+  const values = { ...Object.fromEntries([...form].map(([k, v]) => [k, String(v)])), branches: form.getAll('branches').join('\n') }
   // checkboxes: absent when unticked, and `branches` is many values under one name
   const parsed = tournamentInput.safeParse({ ...values, branches: form.getAll('branches').map(String), requireInGameId: form.get('requireInGameId') === 'on' })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message, values }
@@ -66,7 +66,7 @@ export async function setRoleAction(_prev: FormState, form: FormData): Promise<F
   if (!res.ok) {
     return {
       ok: false,
-      error: res.error === 'self' ? 'You cannot change your own role. Ask another admin.' : 'No account with that email yet — they have to sign up first.',
+      error: res.error === 'self' ? 'You cannot change your own role. Ask another admin.' : 'No account with that email yet. They have to sign up first.',
       values: { email },
     }
   }

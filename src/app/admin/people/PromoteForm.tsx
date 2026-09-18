@@ -16,7 +16,7 @@ export function PromoteForm() {
         label="Email" name="email" type="email" required autoComplete="off" inputMode="email"
         value={email} onChange={e => setEmail(e.target.value)}
         error={failed?.error}
-        hint={failed ? undefined : 'They need a Clutch account already — promote the address they signed up with.'}
+        hint={failed ? undefined : 'They need a Clutch account already. Promote the address they signed up with.'}
       />
       {state?.ok && <p role="status" className="text-text">{state.message}</p>}
       <ConfirmButton

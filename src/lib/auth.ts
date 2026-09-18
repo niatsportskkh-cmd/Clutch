@@ -4,7 +4,6 @@ import { nextCookies } from 'better-auth/next-js'
 import { APIError } from 'better-auth/api'
 import { headers } from 'next/headers'
 import { db } from './db.ts'
-import { sendMail } from './mail.ts'
 import { signupGate } from './users.ts'
 
 export const auth = betterAuth({
@@ -13,8 +12,8 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
-    sendResetPassword: ({ user, url }) =>
-      sendMail(user.email, 'Reset your Clutch password', `Reset your password with this link. It expires in 1 hour.\n\n${url}`),
+    // No sendResetPassword: reset is off until it returns another way. Without it better-auth refuses its own
+    // reset endpoint, so no route on this site can send mail.
   },
   // No emailVerification block: admin access is a role on the user document, so a verified
   // address gates nothing and the extra mail only trained people to ignore it.

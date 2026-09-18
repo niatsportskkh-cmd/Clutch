@@ -1,6 +1,6 @@
-import type { Glyph } from '@/lib/schemas'
+import type { Game } from '@/lib/games'
 
-export type Shape = 'trophy' | 'field' | 'teams' | 'check' | Glyph
+export type Shape = 'trophy' | 'field' | 'teams' | 'check' | Game // a game's shape is its logo, from public/games/<key>/mask.png
 export type Target = { shape: Shape; hue: number | null; teams?: number; burst?: boolean }
 
 // Module-level store: the swarm is imperative and lives outside React, so React state would only get in the way.
