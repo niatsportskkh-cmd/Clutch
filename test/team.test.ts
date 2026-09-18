@@ -17,7 +17,7 @@ async function student(n: number, branch = KKH) {
 const captain = (collegeId: string, branch = KKH, id = `u-${collegeId}`) =>
   ({ id, name: 'Cap', email: `${collegeId}@t.dev`, phone: '9000000000', collegeId, branch })
 
-const roster = (ids: string[]) => ({ teamName: 'Team', players: ids.map(collegeId => ({ collegeId, inGameId: 'ign' })) })
+const roster = (ids: string[]) => ({ teamName: 'Team', players: ids.map(collegeId => ({ collegeId, inGameId: `ign-${collegeId}` })) })
 
 async function contest(over: Record<string, unknown> = {}) {
   const _id = new ObjectId()
@@ -115,7 +115,7 @@ test('the captain edits until registration closes, and nobody else ever does', a
   const team = (await teams().findOne({ tournamentId: c }))!
 
   assert.deepEqual(await editTeam(team._id, captain(b, KKH, 'u-not-captain'), roster([a, sub])), { ok: false, error: { code: 'not_found' } })
-  assert.equal((await editTeam(team._id, captain(a), { teamName: 'Renamed', players: [a, sub].map(collegeId => ({ collegeId, inGameId: 'x' })) })).ok, true)
+  assert.equal((await editTeam(team._id, captain(a), { teamName: 'Renamed', players: [a, sub].map(collegeId => ({ collegeId, inGameId: `x-${collegeId}` })) })).ok, true)
 
   const after = (await teams().findOne({ _id: team._id }))!
   assert.equal(after.teamName, 'Renamed')
@@ -168,8 +168,8 @@ test('the admin table filters by contest, college and location, and searches pla
   const c = await contest({ branches: [KKH, VJ] })
   const [a, b] = [await student(300), await student(301)]
   const [x, y] = [await student(302, VJ), await student(303, VJ)]
-  await registerTeam(c, captain(a), { teamName: 'Falcons', players: [a, b].map(collegeId => ({ collegeId, inGameId: 'i' })) })
-  await registerTeam(c, captain(x, VJ), { teamName: 'Ravens', players: [x, y].map(collegeId => ({ collegeId, inGameId: 'i' })) })
+  await registerTeam(c, captain(a), { teamName: 'Falcons', players: [a, b].map(collegeId => ({ collegeId, inGameId: `i-${collegeId}` })) })
+  await registerTeam(c, captain(x, VJ), { teamName: 'Ravens', players: [x, y].map(collegeId => ({ collegeId, inGameId: `i-${collegeId}` })) })
 
   assert.equal((await listTeams({ tournamentId: c.toHexString() })).total, 2)
   assert.deepEqual((await listTeams({ tournamentId: c.toHexString(), branch: VJ })).rows.map(r => r.teamName), ['Ravens'])
@@ -194,4 +194,39 @@ test('contest edits cannot strand teams that already registered', async () => {
   assert.equal(await deleteTournament(c), false) // teams registered
   await cancelTeam((await teams().findOne({ tournamentId: c }))!._id, null)
   assert.equal(await deleteTournament(c), true)
+})
+
+test('two players on one team cannot share an in-game ID, whatever the case', async () => {
+  const c = await contest()
+  const [a, b] = [await student(500), await student(501)]
+  const res = await registerTeam(c, captain(a), { teamName: 'Twins', players: [{ collegeId: a, inGameId: 'Ace#IN1' }, { collegeId: b, inGameId: 'ace#in1' }] })
+  assert.deepEqual(res, { ok: false, error: { code: 'duplicate_ign', inGameId: 'ace#in1' } })
+  assert.equal(await teams().countDocuments({ tournamentId: c }), 0)
+})
+
+test('an in-game ID already used on another team in the contest is refused by name', async () => {
+  const c = await contest()
+  const [a, b, x, y] = [await student(510), await student(511), await student(512), await student(513)]
+  await registerTeam(c, captain(a), { teamName: 'Falcons', players: [{ collegeId: a, inGameId: 'Shadow' }, { collegeId: b, inGameId: 'b1' }] })
+  const res = await registerTeam(c, captain(x), { teamName: 'Ravens', players: [{ collegeId: x, inGameId: 'x1' }, { collegeId: y, inGameId: 'SHADOW' }] })
+  assert.deepEqual(res, { ok: false, error: { code: 'ign_taken', inGameId: 'Shadow', name: 'Player 510', teamName: 'Falcons' } })
+
+  // the captain edit and the admin edit run the same check
+  const [p, q] = [await student(514), await student(515)]
+  await registerTeam(c, captain(p), { teamName: 'Owls', players: [{ collegeId: p, inGameId: 'p1' }, { collegeId: q, inGameId: 'q1' }] })
+  const owls = (await teams().findOne({ tournamentId: c, teamName: 'Owls' }))!
+  const clash = { teamName: 'Owls', players: [{ collegeId: p, inGameId: 'p1' }, { collegeId: q, inGameId: 'shadow' }] }
+  assert.equal(((await editTeam(owls._id, captain(p), clash)) as { error: { code: string } }).error.code, 'ign_taken')
+  assert.equal(((await adminEditTeam(owls._id, clash)) as { error: { code: string } }).error.code, 'ign_taken')
+})
+
+test('the same in-game ID is fine in another contest and when a team re-saves itself', async () => {
+  const [c1, c2] = [await contest(), await contest()]
+  const [a, b] = [await student(520), await student(521)]
+  const r = { teamName: 'Team', players: [{ collegeId: a, inGameId: 'Mav' }, { collegeId: b, inGameId: 'Goose' }] }
+  assert.equal((await registerTeam(c1, captain(a), r)).ok, true)
+  assert.equal((await registerTeam(c2, captain(a), r)).ok, true)
+  const team = (await teams().findOne({ tournamentId: c1 }))!
+  assert.equal((await editTeam(team._id, captain(a), { ...r, teamName: 'Renamed' })).ok, true)
+  assert.equal((await adminEditTeam(team._id, r)).ok, true)
 })

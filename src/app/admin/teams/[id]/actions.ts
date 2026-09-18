@@ -18,6 +18,8 @@ function message(e: TeamError): string {
     case 'wrong_college': return `${e.name} (${e.collegeId}) is from ${e.branch}, not this team's college.`
     case 'duplicate_player': return `${e.collegeId} is in the team twice.`
     case 'already_registered': return `${e.name} (${e.collegeId}) is already playing this contest for ${e.teamName}.`
+    case 'duplicate_ign': return `Two players have the same in-game ID (${e.inGameId}). Every player needs their own.`
+    case 'ign_taken': return `In-game ID ${e.inGameId} is already used by ${e.name} on ${e.teamName} in this contest.`
   }
 }
 

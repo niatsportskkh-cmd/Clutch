@@ -39,6 +39,13 @@ export type TeamError =
   | { code: 'wrong_college'; name: string; collegeId: string; branch: string }
   | { code: 'duplicate_player'; collegeId: string }
   | { code: 'already_registered'; name: string; collegeId: string; teamName: string }
+  | { code: 'duplicate_ign'; inGameId: string }
+  | { code: 'ign_taken'; inGameId: string; name: string; teamName: string }
+
+// In-game IDs match ignoring case (ICU strength 2: case-blind, accent-aware). The query collation and sameIgn are
+// the same rule, so the database and the error message never disagree about what counts as a match.
+const CI = { locale: 'en', strength: 2 } as const
+const sameIgn = (a: string, b: string) => a.localeCompare(b, 'en', { sensitivity: 'accent' }) === 0
 
 export const tournaments = () => db.collection<Tournament>('tournaments')
 export const teams = () => db.collection<Team>('teams')
@@ -121,6 +128,9 @@ async function buildRoster(t: Tournament, branch: string, mustInclude: string, i
   const ids = input.players.map(p => p.collegeId)
   const dupe = ids.find((id, i) => ids.indexOf(id) !== i)
   if (dupe) return fail({ code: 'duplicate_player', collegeId: dupe })
+  const igns = input.players.map(p => p.inGameId.trim()).filter(Boolean)
+  const twin = igns.find((g, i) => igns.findIndex(h => sameIgn(g, h)) !== i)
+  if (twin) return fail({ code: 'duplicate_ign', inGameId: twin })
   if (!ids.includes(mustInclude)) {
     return fail({ code: 'bad_roster', message: `The captain (${mustInclude}) has to stay on the team.` })
   }
@@ -145,17 +155,23 @@ async function buildRoster(t: Tournament, branch: string, mustInclude: string, i
   }
 }
 
-/** Names the team a clashing player is already on, so "already registered" is actionable instead of a dead end. */
+/** Names the team a clashing player or in-game ID is already on, so the error is actionable instead of a dead end. */
 async function findClash(tournamentId: ObjectId, players: Player[], exclude?: ObjectId): Promise<TeamError | null> {
-  const clash = await teams().findOne({
-    tournamentId,
-    status: 'confirmed',
-    'players.collegeId': { $in: players.map(p => p.collegeId) },
-    ...(exclude ? { _id: { $ne: exclude } } : {}),
-  })
-  if (!clash) return null
-  const who = clash.players.find(p => players.some(q => q.collegeId === p.collegeId))!
-  return { code: 'already_registered', name: who.name, collegeId: who.collegeId, teamName: clash.teamName }
+  const others = { tournamentId, status: 'confirmed' as const, ...(exclude ? { _id: { $ne: exclude } } : {}) }
+  const clash = await teams().findOne({ ...others, 'players.collegeId': { $in: players.map(p => p.collegeId) } })
+  if (clash) {
+    const who = clash.players.find(p => players.some(q => q.collegeId === p.collegeId))!
+    return { code: 'already_registered', name: who.name, collegeId: who.collegeId, teamName: clash.teamName }
+  }
+  // ponytail: no unique index backs this, so two captains entering one in-game ID for two different students in the
+  // same instant could both get in (the college-ID index still stops one person joining twice). If it ever happens,
+  // add a unique index on (tournamentId, players.inGameId) with collation CI and a partial filter for non-empty IDs.
+  const igns = players.map(p => p.inGameId).filter(Boolean)
+  if (!igns.length) return null
+  const taken = await teams().findOne({ ...others, 'players.inGameId': { $in: igns } }, { collation: CI })
+  if (!taken) return null
+  const who = taken.players.find(p => igns.some(g => sameIgn(g, p.inGameId)))!
+  return { code: 'ign_taken', inGameId: who.inGameId, name: who.name, teamName: taken.teamName }
 }
 
 export type TeamResult = { ok: true; code: string } | { ok: false; error: TeamError }
