@@ -48,15 +48,7 @@ If someone's number has changed since the sheet was made, edit their row at `/ad
 
 ## Becoming admin
 
-On a fresh database nobody can sign up, because the student list is empty and the list is the gate. Two ways in:
-
-**From the environment (how a fresh deployment gets its first admin).** Set `ADMIN_EMAIL` and `ADMIN_PASSWORD`, optionally `ADMIN_NAME`, `ADMIN_PHONE` and `ADMIN_COLLEGE_ID` — the whole sign-up form. When the server starts, that account is created with the admin role, skipping the student-list check. Then just log in with it.
-
-It gets no college, so it runs `/admin` but can never be registered for a contest or put on a team. Restarting never duplicates it: if the account exists it is left alone, and only promoted if its role was wrong. The password is never rewritten, so changing `ADMIN_PASSWORD` later does not change the account's — and clearing the variables leaves the account working.
-
-**Or promote an existing account.**
-
-1. Sign up normally (needs a roster row to exist).
+1. Sign up normally.
 2. `npm run promote you@example.com` (add `-- --revoke` to take it back).
 
 That is only needed once. After it, `/admin` → **Admins** promotes anyone else who already has an account. The role is a field on the user document, never anything the sign-up form can set, and nobody can change their own role, so the last admin cannot lock themselves out. Everyone else sees a 404 at `/admin`.
@@ -68,7 +60,6 @@ That is only needed once. After it, `/admin` → **Admins** promotes anyone else
 | `MONGODB_URI` | Atlas connection string ending in `/clutch`. In Atlas, Network Access must allow `0.0.0.0/0` (Vercel has no fixed IPs) |
 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | The production URL, no trailing slash |
-| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_PHONE`, `ADMIN_COLLEGE_ID` | The first way in, created at server start. Use a long password: this account can read every student's phone number and edit every team. Remove the variables once you have promoted a real admin |
 | `SMTP_URL`, `EMAIL_FROM` | Any SMTP provider: `smtp://user:pass@host:587`. Gmail needs an app password; a provider sending as your own domain needs that domain's SPF/DKIM set up, or the mail lands in spam |
 
 Indexes are created on first use. Load the colleges and the student roster at `/admin/colleges` and `/admin/students` before anyone can sign up.

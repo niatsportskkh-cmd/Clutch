@@ -8,17 +8,6 @@ import { sendMail } from './mail.ts'
 import { collegeIdSchema, phoneSchema } from './schemas.ts'
 import { findStudent } from './students.ts'
 
-/**
- * The roster gate is skipped only here, only while ensureAdmin() is creating the ADMIN_EMAIL account.
- * It runs from instrumentation's register(), before the server accepts a request, so no sign-up from
- * the outside can ever be in flight while this is true.
- */
-let bootstrapping = false
-export async function asBootstrap<T>(fn: () => Promise<T>) {
-  bootstrapping = true
-  try { return await fn() } finally { bootstrapping = false }
-}
-
 export const auth = betterAuth({
   // no `client` option: transactions stay off, so a standalone local Mongo works
   database: mongodbAdapter(db),
@@ -47,7 +36,6 @@ export const auth = betterAuth({
         // BOTH mobile and college ID. Runs inside better-auth so every sign-up route goes through it,
         // not just our form.
         before: async user => {
-          if (bootstrapping) return { data: { ...user, role: 'admin' } } // the break-glass admin: no roster row exists yet
           const raw = user as { phone?: unknown; collegeId?: unknown }
           const phone = phoneSchema.safeParse(raw.phone)
           if (!phone.success) throw new APIError('BAD_REQUEST', { message: 'Enter a valid mobile number' })
