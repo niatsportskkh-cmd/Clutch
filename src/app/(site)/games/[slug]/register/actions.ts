@@ -1,6 +1,7 @@
 'use server'
 import { ObjectId } from 'mongodb'
 import { revalidatePath } from 'next/cache'
+import { redirect, RedirectType } from 'next/navigation'
 import { getUser } from '@/lib/auth'
 import { teamInput } from '@/lib/schemas'
 import { registerTeam, editTeam, getBySlug, type TeamError } from '@/lib/tournaments'
@@ -45,5 +46,8 @@ export async function registerAction(slug: string, teamId: string | null, _prev:
     : await registerTeam(t._id, captain, parsed.data)
   if (!res.ok) return fail(message(res.error))
   revalidatePath('/', 'layout') // home list, this page (which now renders the confirmation), /me
+  // An edit used to re-render the form it came from, with nothing to say it had worked. Land on the confirmation,
+  // replacing the edit URL so Back does not reopen the form. Outside any try: redirect() works by throwing.
+  if (teamId) redirect(`/games/${t.slug}/register?saved=1`, RedirectType.replace)
   return { ok: true }
 }

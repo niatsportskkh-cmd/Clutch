@@ -12,11 +12,11 @@ import { BackLink } from '@/components/BackLink'
 
 export const metadata = { title: 'Register' }
 
-type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ edit?: string }> }
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ edit?: string; saved?: string }> }
 
 export default async function RegisterPage({ params, searchParams }: Props) {
   const { slug } = await params
-  const { edit } = await searchParams
+  const { edit, saved } = await searchParams
   const t = await getBySlug(slug)
   if (!t || t.status === 'draft') notFound()
   const user = await getUser()
@@ -40,6 +40,11 @@ export default async function RegisterPage({ params, searchParams }: Props) {
         <SceneStage className="h-[28dvh] min-h-48 lg:hidden" />
         {done ? (
           <div className="rise flex flex-col items-start gap-6">
+            {saved && (
+              <p role="status" style={{ '--i': 0 } as CSSProperties} className="rounded-full bg-white/[0.08] px-4 py-2 text-sm font-semibold text-text ring-1 ring-inset ring-white/15">
+                Changes saved.
+              </p>
+            )}
             <h1 style={{ '--i': 0 } as CSSProperties} className="display text-[clamp(2.6rem,9vw,4.75rem)]">You&apos;re in</h1>
             <p style={{ '--i': 1 } as CSSProperties} className="max-w-[50ch] text-lg text-muted">
               <span className="font-semibold text-text">{team.teamName}</span> is registered for{' '}
