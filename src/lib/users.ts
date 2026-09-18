@@ -40,7 +40,7 @@ export async function signupGate(raw: { phone?: unknown; collegeId?: unknown }):
   const phone = phoneSchema.safeParse(raw.phone)
   if (!phone.success) return { ok: false, message: 'Enter a valid NIAT registered number' }
   const collegeId = collegeIdSchema.safeParse(raw.collegeId)
-  if (!collegeId.success) return { ok: false, message: 'Enter a valid college ID' }
+  if (!collegeId.success) return { ok: false, message: 'Enter a valid NIAT ID' }
 
   await ensureIndexes() // the unique index on user.collegeId is the race backstop for the duplicate check below
 
@@ -54,10 +54,10 @@ export async function signupGate(raw: { phone?: unknown; collegeId?: unknown }):
 
   const student = await findStudent(collegeId.data, phone.data)
   if (!student) {
-    return { ok: false, message: 'That college ID and NIAT registered number are not on the student list together. Check both, or ask the organisers to add you.' }
+    return { ok: false, message: 'That NIAT ID and NIAT registered number are not on the student list together. Check both, or ask the organisers to add you.' }
   }
   if (await users().findOne({ collegeId: collegeId.data })) {
-    return { ok: false, message: 'An account already exists for this college ID. Log in instead.' }
+    return { ok: false, message: 'An account already exists for this NIAT ID. Log in instead.' }
   }
   return { ok: true, fields: { phone: phone.data, collegeId: collegeId.data, branch: student.branch } }
 }

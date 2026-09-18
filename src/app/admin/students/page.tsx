@@ -33,7 +33,7 @@ export default async function StudentsPage({ searchParams }: { searchParams: Pro
         <BackLink href="/admin">Admin</BackLink>
         <h1 className="display mt-4 text-4xl sm:text-5xl">Students</h1>
         <p className="mt-3 max-w-[64ch] text-lg text-muted">
-          The list every account and every team is checked against. Nobody can sign up unless their college ID and mobile number
+          The list every account and every team is checked against. Nobody can sign up unless their NIAT ID and mobile number
           are both on a row here, and teams are built by looking players up in it.
         </p>
       </div>

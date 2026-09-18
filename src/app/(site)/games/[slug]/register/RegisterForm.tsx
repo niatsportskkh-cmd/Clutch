@@ -28,7 +28,7 @@ export function RegisterForm({ slug, teamSize, requireInGameId, idHint, captainC
         <p className="text-muted">
           {teamSize === 1
             ? <>Your name and number come from the student list. You have to be from <span className="font-semibold text-text">{branch}</span>.</>
-            : <>Type each player&apos;s college ID. Their name and number come from the student list, so there is nothing to spell wrong.
+            : <>Type each player&apos;s NIAT ID. Their name and number come from the student list, so there is nothing to spell wrong.
               Everyone has to be from <span className="font-semibold text-text">{branch}</span>.</>}
         </p>
         {Array.from({ length: teamSize }, (_, i) => (
@@ -39,8 +39,8 @@ export function RegisterForm({ slug, teamSize, requireInGameId, idHint, captainC
             </p>
             <div className={`grid gap-4 ${requireInGameId ? 'sm:grid-cols-2' : ''}`}>
               {/* the captain's own slot is fixed: a team always contains the person who made it */}
-              <Field label="College ID" name="collegeId" required minLength={3} maxLength={24} autoComplete="off" autoCapitalize="characters"
-                spellCheck={false} readOnly={i === 0} defaultValue={at(i)} placeholder="2203A51234" />
+              <Field label="NIAT ID" name="collegeId" required minLength={3} maxLength={24} autoComplete="off" autoCapitalize="characters"
+                spellCheck={false} readOnly={i === 0} defaultValue={at(i)} placeholder="N26H01A0001" />
               {requireInGameId && (
                 <Field label="In-game ID" name="inGameId" required minLength={2} maxLength={40} autoComplete="off" autoCapitalize="off"
                   spellCheck={false} defaultValue={gameAt(i)} placeholder={idHint} />

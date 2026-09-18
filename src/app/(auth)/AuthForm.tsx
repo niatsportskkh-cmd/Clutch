@@ -54,10 +54,10 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
           <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" />
           {mode === 'signup' && (
             <>
-              <Field label="College ID number" name="collegeId" required minLength={3} maxLength={24} autoComplete="off" autoCapitalize="characters" spellCheck={false}
-                placeholder="2203A51234" hint="Exactly as the college has it. Your account is only created if it matches the student list." />
+              <Field label="NIAT ID" name="collegeId" required minLength={3} maxLength={24} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                placeholder="N26H01A0001" hint="Exactly as NIAT gave it to you. Your account is only created if it matches the student list." />
               <Field label="NIAT registered number" name="phone" type="tel" required autoComplete="tel" inputMode="tel" placeholder="98765 43210"
-                hint="The mobile number NIAT has on file for your college ID. No OTP." />
+                hint="The mobile number NIAT has on file for you. No OTP." />
             </>
           )}
           <PasswordField label="Password" name="password" required minLength={8}
@@ -75,7 +75,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         <p className="mt-3 text-muted">
           Forgot your password? Email{' '}
           <a className="font-semibold text-text underline underline-offset-4" href={`mailto:${ORGANISERS_EMAIL}?subject=${encodeURIComponent('Forgot my Clutch password')}`}>{ORGANISERS_EMAIL}</a>{' '}
-          from the email you signed up with and include your college ID. An organiser will set a new one for you.
+          from the email you signed up with and include your NIAT ID. An organiser will set a new one for you.
         </p>
       )}
     </div>

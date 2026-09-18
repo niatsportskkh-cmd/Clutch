@@ -9,7 +9,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!t) return new Response('Not found', { status: 404 })
   const regs = await listTeamsFor(t._id)
 
-  const perPlayer = t.requireInGameId ? ['Player', 'College ID', 'Mobile', 'In-game ID'] : ['Player', 'College ID', 'Mobile']
+  const perPlayer = t.requireInGameId ? ['Player', 'NIAT ID', 'Mobile', 'In-game ID'] : ['Player', 'NIAT ID', 'Mobile']
   const head = ['#', 'Code', 'Team', 'College', 'Location', 'Captain', 'Captain mobile', 'Captain email', 'Registered',
     ...Array.from({ length: t.teamSize }, (_, i) => perPlayer.map(c => `${c} ${i + 1}`)).flat()]
   const rows = regs.map((r, i) => {

@@ -18,7 +18,7 @@ export function LoginGate({ next }: { next: string }) {
       <div className="rise flex flex-col items-start gap-6">
         <h1 style={{ '--i': 0 } as CSSProperties} className="display text-[clamp(2.6rem,8vw,4.5rem)]">Log in to see contests and register</h1>
         <p style={{ '--i': 1 } as CSSProperties} className="max-w-[48ch] text-lg leading-relaxed text-muted">
-          Contests are for NIAT students with a Clutch account. Signing up takes a minute: your college ID and your NIAT registered number. Entry is free.
+          Contests are for NIAT students with a Clutch account. Signing up takes a minute: your NIAT ID and your NIAT registered number. Entry is free.
         </p>
         <div style={{ '--i': 2 } as CSSProperties} className="flex flex-wrap gap-3">
           <Button href={`/login${q}`}>Log in</Button>

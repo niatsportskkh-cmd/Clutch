@@ -79,13 +79,13 @@ export async function setPasswordAction(_prev: FormState, form: FormData): Promi
   const admin = await requireAdmin()
   const who = String(form.get('who') ?? '').trim()
   const password = String(form.get('password') ?? '')
-  if (!who) return { ok: false, error: 'Enter their email or college ID', values: { who } }
+  if (!who) return { ok: false, error: 'Enter their email or NIAT ID', values: { who } }
   if (password.length < 8 || password.length > 128) return { ok: false, error: 'The new password needs 8 to 128 characters', values: { who } }
   const res = await setPassword(who, password, admin.id)
   if (!res.ok) {
     return {
       ok: false,
-      error: res.error === 'self' ? 'Change your own password from My games.' : 'No account with that email or college ID.',
+      error: res.error === 'self' ? 'Change your own password from My games.' : 'No account with that email or NIAT ID.',
       values: { who },
     }
   }

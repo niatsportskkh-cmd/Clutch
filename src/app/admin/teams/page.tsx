@@ -42,7 +42,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
 
       {/* a GET form: filters live in the URL, so a view can be reloaded, bookmarked or sent to someone */}
       <form className="flex flex-wrap items-end gap-2">
-        <input name="q" defaultValue={q} placeholder="Team, player or college ID" aria-label="Search teams"
+        <input name="q" defaultValue={q} placeholder="Team, player or NIAT ID" aria-label="Search teams"
           className={`${control} min-w-56 flex-1 placeholder:text-muted/80`} />
         <select name="tournamentId" defaultValue={tournamentId} aria-label="Filter by contest" className={control}>
           <option value="">Every contest</option>

@@ -12,8 +12,8 @@ export function StudentForm({ initial, colleges }: { initial?: { collegeId: stri
   return (
     <form action={action} key={initial?.collegeId ?? 'new'} className="flex flex-col gap-5">
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="College ID" name="collegeId" required maxLength={24} autoComplete="off" autoCapitalize="characters" spellCheck={false}
-          defaultValue={kept?.collegeId ?? initial?.collegeId} placeholder="2203A51234" />
+        <Field label="NIAT ID" name="collegeId" required maxLength={24} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+          defaultValue={kept?.collegeId ?? initial?.collegeId} placeholder="N26H01A0001" />
         <Field label="Name" name="name" required maxLength={60} autoComplete="off" defaultValue={kept?.name ?? initial?.name} />
         <Field label="Mobile" name="phone" type="tel" required autoComplete="off" inputMode="tel"
           defaultValue={kept?.phone ?? initial?.phone} placeholder="98765 43210" />

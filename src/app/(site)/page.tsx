@@ -8,8 +8,8 @@ import { GameChapter } from '@/components/GameChapter'
 import { SceneStage, SceneTarget } from '@/components/scene/SceneTarget'
 
 const STEPS = [
-  ['Make an account', 'Your college ID and your NIAT registered number. Both have to match the student list.'],
-  ['Pick a contest on the Games page', 'The captain types each player’s college ID. Names and numbers come from the student list.'],
+  ['Make an account', 'Your NIAT ID and your NIAT registered number. Both have to match the student list.'],
+  ['Pick a contest on the Games page', 'The captain types each player’s NIAT ID. Names and numbers come from the student list.'],
   ['Get the room ID here', 'Before the match starts, the room ID and password appear on your contest page.'],
 ]
 

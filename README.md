@@ -1,6 +1,6 @@
 # Clutch
 
-Free-entry inter-college contests in five games: Free Fire MAX and BGMI (squads of 4), COD Mobile and Valorant (teams of 5) and Matiks (solo). The game sets the team size; nobody can change it. An admin loads the colleges and the student roster; a student signs up only if their college ID and NIAT registered number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing college IDs (names and numbers come from the roster), and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
+Free-entry inter-college contests in five games: Free Fire MAX and BGMI (squads of 4), COD Mobile and Valorant (teams of 5) and Matiks (solo). The game sets the team size; nobody can change it. An admin loads the colleges and the student roster; a student signs up only if their NIAT ID and NIAT registered number are both on it. Contests are opened to a set of colleges, and only those students see them. A captain registers a team by typing NIAT IDs (names and numbers come from the roster), and everyone on a team must be from the captain's own college. There is no slot cap: any number of teams may enter. Every teammate sees the team on their own account. Admins run it all from `/admin`. A three.js particle swarm sits behind every page and takes the shape of whatever you are looking at.
 
 Next.js 16 (App Router), Tailwind 4, plain three.js, MongoDB, better-auth.
 
@@ -18,7 +18,7 @@ teams                 captain + players, all from one college. College and locat
 
 Three rules hold the model together, and each has a test:
 
-1. **A person is identified by college ID, never by account.** A teammate who never filled a form still sees the team, because membership is matched on their roster ID.
+1. **A person is identified by NIAT ID, never by account.** A teammate who never filled a form still sees the team, because membership is matched on their roster ID.
 2. **A team is single-college by construction.** Its college is the captain's roster row, so admin filters by college and location cannot be wrong.
 3. **One person, one team per contest.** Enforced by a unique index on `(tournamentId, players.collegeId)`, so two captains racing for the same player cannot both win.
 4. **One in-game ID, one player per contest.** Nobody can enter an in-game ID that another player in the same contest already uses, on their own team or any other, whatever the letter case. Checked in `findClash`, which captain registration, captain edits and admin edits all go through.
@@ -39,9 +39,9 @@ Use `127.0.0.1` in `MONGODB_URI`, not `localhost`. On Fedora `localhost` is IPv6
 
 ## The student list
 
-Nobody can sign up unless their **college ID and NIAT registered number are both on one row** of the `students` collection. Admins load it at `/admin/students`, either by importing a CSV whose first row names the columns `collegeId, name, phone, branch` (any order, up to 5000 rows) or by adding people one at a time. Re-importing a corrected sheet updates rows rather than duplicating them, because everything upserts on college ID.
+Nobody can sign up unless their **NIAT ID and NIAT registered number are both on one row** of the `students` collection. Admins load it at `/admin/students`, either by importing a CSV whose first row names the columns `collegeId, name, phone, branch` (any order, up to 5000 rows) or by adding people one at a time. Re-importing a corrected sheet updates rows rather than duplicating them, because everything upserts on NIAT ID.
 
-Both sides normalise before they compare: `+91 98765 43210` and `9876543210` are the same number, `2203a51234` and `2203A51234` the same ID. A student's `branch` is copied from their roster row at sign-up and cannot be typed by hand. One college ID gets one account.
+Both sides normalise before they compare: `+91 98765 43210` and `9876543210` are the same number, `2203a51234` and `2203A51234` the same ID. A student's `branch` is copied from their roster row at sign-up and cannot be typed by hand. One NIAT ID gets one account.
 
 If someone's number has changed since the sheet was made, edit their row at `/admin/students` — that is the intended fix, so the mobile match stays meaningful.
 
@@ -80,7 +80,6 @@ Indexes are created on first use. Load the colleges and the student roster at `/
 
 - Team counts refresh by polling every 20 s, not push.
 - A contest another college cannot enter serves the not-found page, but with HTTP 200 rather than 404. The content is hidden; only the status code is a soft 404, and the same is true of `/admin` for non-admins. That is how `notFound()` behaves in a dynamic route here.
-- A signed-out visitor sees every open contest on the Games page; the college gate applies once they log in. Filter `listOpen()` differently if that should be hidden too.
-- Mobile numbers and college IDs are never verified against the student themselves, only against the roster. Someone who knows a classmate's college ID can put them on a team; the teammate sees it in My games and asks the captain to change it.
+- Mobile numbers and NIAT IDs are never verified against the student themselves, only against the roster. Someone who knows a classmate's NIAT ID can put them on a team; the teammate sees it in My games and asks the captain to change it.
 - No payments, brackets, results or image uploads.
 - No self-service password reset, and the site sends no email. A player who forgets their password emails the organisers (the address is `ORGANISERS_EMAIL` in `src/app/(auth)/AuthForm.tsx`, a placeholder until they pick one), and an admin sets a new one under Admin, Admins and passwords. That signs the player out everywhere. Players change their own password from My games.

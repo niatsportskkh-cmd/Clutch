@@ -17,7 +17,7 @@ export function PasswordForm() {
 
   return (
     <form action={action} className="flex flex-col gap-5">
-      <Field label="Email or college ID" name="who" required autoComplete="off" spellCheck={false} defaultValue={failed?.values?.who ?? ''} onChange={e => setWho(e.target.value)}
+      <Field label="Email or NIAT ID" name="who" required autoComplete="off" spellCheck={false} defaultValue={failed?.values?.who ?? ''} onChange={e => setWho(e.target.value)}
         error={failed?.error} hint={failed ? undefined : 'The account they log in with.'} />
       <PasswordField label="New password" name="password" required minLength={8} maxLength={128} autoComplete="new-password"
         hint="At least 8 characters. They can change it themselves from My games afterwards." />

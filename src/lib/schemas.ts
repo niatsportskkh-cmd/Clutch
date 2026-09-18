@@ -17,7 +17,7 @@ export const phoneSchema = z.string()
 
 // Same idea for college IDs: one spelling in the roster and at the gate, whatever case they type.
 export const collegeIdSchema = z.string().trim().toUpperCase()
-  .pipe(z.string().regex(/^[A-Z0-9][A-Z0-9/-]{2,23}$/, 'Enter a valid college ID'))
+  .pipe(z.string().regex(/^[A-Z0-9][A-Z0-9/-]{2,23}$/, 'Enter a valid NIAT ID'))
 
 // The game fixes the name and the team size (GAME in games.ts); the form only says which game.
 export const tournamentInput = z.object({

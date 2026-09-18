@@ -24,7 +24,7 @@ export function TeamForm({ id, teamSize, requireInGameId, branch, captainCollege
         </p>
         {Array.from({ length: teamSize }, (_, i) => (
           <div key={i} className={`grid gap-4 ${requireInGameId ? 'sm:grid-cols-2' : ''}`}>
-            <Field label={`Player ${i + 1} college ID`} name="collegeId" required minLength={3} maxLength={24}
+            <Field label={`Player ${i + 1} NIAT ID`} name="collegeId" required minLength={3} maxLength={24}
               autoComplete="off" autoCapitalize="characters" spellCheck={false} defaultValue={at(i)} />
             {requireInGameId && <Field label={`Player ${i + 1} in-game ID`} name="inGameId" required maxLength={40} autoComplete="off" spellCheck={false} defaultValue={gameAt(i)} />}
           </div>

@@ -13,7 +13,7 @@ after(() => getClient().close())
 
 test('bad fields are refused even on an empty database', async () => {
   assert.deepEqual(await signupGate({ phone: '123', collegeId: 'ADMIN001' }), { ok: false, message: 'Enter a valid NIAT registered number' })
-  assert.deepEqual(await signupGate({ phone: '9876543210', collegeId: '!' }), { ok: false, message: 'Enter a valid college ID' })
+  assert.deepEqual(await signupGate({ phone: '9876543210', collegeId: '!' }), { ok: false, message: 'Enter a valid NIAT ID' })
 })
 
 test('the first account ever becomes admin without being on the roster', async () => {
@@ -44,6 +44,6 @@ test('the roster match needs both halves, and one college ID gets one account', 
   await users().insertOne({ _id: new ObjectId(), name: 'Asha', email: 'asha@t.dev', phone: '9000000002', collegeId: '2203A51000' })
   const again = await signupGate({ phone: '9000000002', collegeId: '2203A51000' })
   assert.equal(again.ok, false)
-  assert.match((again as { message: string }).message, /already exists for this college ID/)
+  assert.match((again as { message: string }).message, /already exists for this NIAT ID/)
   assert.doesNotMatch((again as { message: string }).message, /reset/)
 })
