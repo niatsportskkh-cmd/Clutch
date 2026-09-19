@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { getUser } from '@/lib/auth'
-import { GAME, isGame, teamLabel } from '@/lib/games'
+import { EXTERNAL_REGISTER, GAME, isGame, teamLabel } from '@/lib/games'
 import { formatIst } from '@/lib/time'
 import { getBySlug, isRegOpen, myTeam, visibleTo } from '@/lib/tournaments'
 import { Button } from '@/components/Button'
@@ -21,6 +21,8 @@ export default async function RegisterPage({ params, searchParams }: Props) {
   const { edit, saved } = await searchParams
   const t = await getBySlug(slug)
   if (!t || t.status === 'draft' || !isGame(t.game)) notFound()
+  const external = EXTERNAL_REGISTER[t.game]
+  if (external) redirect(external) // registration for this game happens on the partner site
   const user = await getUser()
   if (!user) return <LoginGate next={`/games/${slug}/register`} />
   if (!visibleTo(t, user.branch)) notFound() // another college's contest does not exist as far as this account is concerned

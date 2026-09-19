@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import type { GameView } from '@/lib/tournaments'
 import { ART } from '@/lib/game-art'
-import { teamLabel } from '@/lib/games'
+import { EXTERNAL_REGISTER, teamLabel } from '@/lib/games'
 import { Button } from './Button'
 import { TeamCount } from './TeamCount'
 
@@ -10,7 +10,7 @@ import { TeamCount } from './TeamCount'
  * Hover (mouse) or keyboard focus pushes the art in and lifts the character. CSS only; nothing touches the swarm.
  */
 export function GameCard({ game }: { game: GameView }) {
-  const a = ART[game.game]
+  const a = ART[game.game], external = EXTERNAL_REGISTER[game.game]
   return (
     <article className="game-card relative isolate flex min-h-[27rem] overflow-hidden rounded-[1.75rem] bg-surface ring-1 ring-white/10 has-focus-visible:ring-2 has-focus-visible:ring-accent sm:min-h-72">
       <Image src={a.art} alt="" fill sizes="(min-width: 896px) 896px, 100vw" className="card-art -z-20 object-cover opacity-60" />
@@ -34,7 +34,9 @@ export function GameCard({ game }: { game: GameView }) {
         </div>
         <TeamCount teams={game.teams} open={game.open} solo={game.teamSize === 1} className="max-w-72" />
         <div className="flex gap-2">
-          <Button href={`/games/${game.slug}/register`} disabled={!game.open} className="px-7">{game.open ? 'Register' : 'Closed'}</Button>
+          {external
+            ? <Button href={external} className="px-7">Register</Button>
+            : <Button href={`/games/${game.slug}/register`} disabled={!game.open} className="px-7">{game.open ? 'Register' : 'Closed'}</Button>}
           <Button href={`/games/${game.slug}`} variant="secondary" className="px-5">Details</Button>
         </div>
       </div>

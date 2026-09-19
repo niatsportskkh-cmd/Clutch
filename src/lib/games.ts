@@ -20,6 +20,9 @@ export const GAME: Record<Game, { name: string; teamSize: number; idHint: string
 }
 
 /** Contests saved before the five (a "Code Sprint") are still in the database. Players never see them. */
+/** Games whose registration is run by a partner site: every Register button, and the register page itself, go there. */
+export const EXTERNAL_REGISTER: Partial<Record<Game, string>> = { freefire: 'https://www.agentesports.in/niat/clutch-2026' }
+
 export const isGame = (g: string): g is Game => Object.hasOwn(GAME, g)
 
 export const teamLabel = (n: number) => (n === 1 ? 'Solo' : n === 2 ? 'Duo' : n === 4 ? 'Squad of 4' : `Team of ${n}`)
