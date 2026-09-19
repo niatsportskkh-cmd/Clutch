@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getUser } from '@/lib/auth'
 import { isAdmin } from '@/lib/users'
 import { listBranches } from '@/lib/branches'
-import { isGame, teamLabel } from '@/lib/games'
+import { EXTERNAL_REGISTER, isGame, teamLabel } from '@/lib/games'
 import { formatIst } from '@/lib/time'
 import { getBySlug, isRegOpen, myTeam, visibleTo, teams as teamsCol } from '@/lib/tournaments'
 import { AutoRefresh } from '@/components/AutoRefresh'
@@ -76,6 +76,8 @@ export default async function GamePage({ params }: Props) {
                 <span className="font-mono text-lg text-text">{reg.code}</span>
                 <span className="text-muted">{reg.teamName}</span>
               </>
+            ) : EXTERNAL_REGISTER[t.game] ? (
+              <Button href={EXTERNAL_REGISTER[t.game]}>Register</Button>
             ) : (
               // signed out is not the same as wrong college: the visitor has no college yet, so send them to log in
               <Button href={`/games/${t.slug}/register`} disabled={!open || (!!user && !mine)}>
