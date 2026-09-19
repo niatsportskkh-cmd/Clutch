@@ -39,18 +39,15 @@ export default async function Home() {
       <section className="relative flex flex-col justify-between gap-12 lg:min-h-[calc(100dvh-8rem)]">
         <SceneStage className="pointer-events-none absolute top-0 right-0 hidden h-[58%] w-[42%] lg:block" />
         <div className="flex flex-col items-start gap-10 sm:gap-12">
-          {/* The co-brand, big and first: Clutch is NIAT's own event. Outside .rise, because it has its own entrance. */}
-          <div className="flex flex-col items-start gap-4">
-            <div className="flex items-center gap-4 sm:gap-7">
-              <span className="brand-in sheen" style={{ '--logo': 'url(/logo.png)' } as CSSProperties}>
-                <Image src="/logo.png" alt="Clutch" width={480} height={177} priority className="h-16 w-auto sm:h-20 lg:h-24" />
-              </span>
-              <span aria-hidden className="brand-x text-4xl leading-none font-extralight text-muted sm:text-5xl">×</span>
-              <span className="brand-stamp sheen" style={{ '--logo': 'url(/brand/niat-shield.webp)' } as CSSProperties}>
-                <Image src="/brand/niat-shield.webp" alt="NIAT" width={302} height={381} priority className="h-20 w-auto sm:h-28 lg:h-32" />
-              </span>
-            </div>
-            <p className="brand-line text-xs font-semibold tracking-[0.25em] text-muted uppercase sm:text-sm">NIAT&apos;s own esports event</p>
+          {/* "Clutch by NIAT", big and first: Clutch is NIAT's own event. Outside .rise, because it has its own entrance. */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <span className="brand-in sheen" style={{ '--logo': 'url(/logo.png)' } as CSSProperties}>
+              <Image src="/logo.png" alt="Clutch" width={480} height={177} priority className="h-16 w-auto sm:h-20 lg:h-24" />
+            </span>
+            <span className="brand-by text-2xl leading-none font-medium text-muted sm:text-3xl lg:text-4xl">by</span>
+            <span className="brand-stamp sheen" style={{ '--logo': 'url(/brand/niat-shield.webp)' } as CSSProperties}>
+              <Image src="/brand/niat-shield.webp" alt="NIAT" width={302} height={381} priority className="h-20 w-auto sm:h-28 lg:h-32" />
+            </span>
           </div>
 
           <div className="rise flex max-w-3xl flex-col items-start gap-6">

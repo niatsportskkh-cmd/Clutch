@@ -10,8 +10,8 @@ import { Field } from '@/components/Field'
 import { Panel } from '@/components/Panel'
 import { PasswordField } from '@/components/PasswordField'
 
-// placeholder: the organisers will swap in their real address
-const ORGANISERS_EMAIL = 'organisers@clutch.example'
+// where players write when they are stuck (a forgotten password goes to a person: the site sends no email)
+const ORGANISERS_EMAIL = 'niatsportskkh@gmail.com'
 
 type Mode = 'login' | 'signup'
 const COPY: Record<Mode, { title: string; submit: string; busy: string }> = {

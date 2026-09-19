@@ -10,7 +10,7 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] })
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: { default: 'Clutch: free esports matches', template: '%s | Clutch' },
+  title: { default: 'Clutch by NIAT: free esports matches', template: '%s | Clutch by NIAT' },
   description: 'Free inter-college esports contests in Free Fire MAX, BGMI, COD Mobile, Valorant and Matiks.',
 }
 export const viewport: Viewport = { themeColor: '#050505', colorScheme: 'dark' }
@@ -28,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <Nav />
         <main className="mx-auto w-full max-w-[1320px] flex-1 px-4 pt-24 pb-24 sm:px-8 sm:pt-32">{children}</main>
         <footer className="mx-auto flex w-full max-w-[1320px] flex-wrap items-center justify-between gap-3 px-4 pb-10 text-sm text-muted sm:px-8">
-          <p>Clutch. Free-entry esports matches.</p>
+          <p>Clutch by NIAT. Free-entry esports matches.</p>
           <p>Entry is always free. No payments are taken on this site.</p>
           <p className="w-full text-xs leading-relaxed text-muted/70">
             Free Fire, BGMI, Call of Duty, VALORANT and Matiks are trademarks of Garena, KRAFTON, Activision, Riot Games and Matiks, whose art appears here.
