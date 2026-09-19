@@ -24,6 +24,11 @@ export function GameChapter({ game, layout }: { game: Game; layout: keyof typeof
         <div className="flex flex-col items-start gap-5 lg:max-w-md">
           <p className="text-sm font-semibold text-text">{teamLabel(g.teamSize)} on {g.platform === 'PC' ? 'PC' : 'mobile'}</p>
           <p className="max-w-[40ch] text-lg leading-relaxed text-muted">{g.blurb}</p>
+          <p className="max-w-[44ch] leading-relaxed text-muted">{g.about}</p>
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <div><dt className="text-muted">Made by</dt><dd className="font-semibold text-text">{g.publisher}</dd></div>
+            <div><dt className="text-muted">In-game ID</dt><dd className="font-semibold text-text">{g.idHint}</dd></div>
+          </dl>
           <Button href={`/games?game=${game}`} variant="secondary">See {g.name} contests</Button>
         </div>
       </div>

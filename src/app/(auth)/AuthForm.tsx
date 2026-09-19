@@ -50,7 +50,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       <h1 className="display mb-6 text-4xl sm:text-5xl">{c.title}</h1>
       <Panel inner="p-5 sm:p-7">
         <form onSubmit={submit} className="flex flex-col gap-5">
-          {mode === 'signup' && <Field label="Name" name="name" required minLength={2} maxLength={60} autoComplete="name" />}
+          {mode === 'signup' && <Field label="Name" name="name" required minLength={2} maxLength={60} autoComplete="name" hint="Your teammates and the organisers see this." />}
           <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" />
           {mode === 'signup' && (
             <>
