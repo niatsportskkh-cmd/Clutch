@@ -10,8 +10,8 @@ import { Field } from '@/components/Field'
 import { Panel } from '@/components/Panel'
 import { PasswordField } from '@/components/PasswordField'
 
-// placeholder: the organisers will swap in their real address
-const ORGANISERS_EMAIL = 'organisers@clutch.example'
+// where players write when they are stuck (a forgotten password goes to a person: the site sends no email)
+const ORGANISERS_EMAIL = 'niatsportskkh@gmail.com'
 
 type Mode = 'login' | 'signup'
 const COPY: Record<Mode, { title: string; submit: string; busy: string }> = {
@@ -50,7 +50,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       <h1 className="display mb-6 text-4xl sm:text-5xl">{c.title}</h1>
       <Panel inner="p-5 sm:p-7">
         <form onSubmit={submit} className="flex flex-col gap-5">
-          {mode === 'signup' && <Field label="Name" name="name" required minLength={2} maxLength={60} autoComplete="name" />}
+          {mode === 'signup' && <Field label="Name" name="name" required minLength={2} maxLength={60} autoComplete="name" hint="Your teammates and the organisers see this." />}
           <Field label="Email" name="email" type="email" required autoComplete="email" inputMode="email" />
           {mode === 'signup' && (
             <>

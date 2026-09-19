@@ -73,8 +73,8 @@ export default async function GamesPage({ searchParams }: { searchParams: Promis
       {all.length === 0 ? (
         <p className="max-w-[48ch] text-lg text-muted">
           {user?.branch
-            ? `Contests show up here as soon as they are announced for ${user.branch}.`
-            : 'New matches show up here as soon as they are announced.'}
+            ? `Contests show up here as soon as they are announced for ${user.branch}. Each game opens on its own, with its start time and registration deadline.`
+            : 'New matches show up here as soon as they are announced. Each game opens on its own, with its start time and registration deadline.'}
         </p>
       ) : rows.length === 0 ? (
         <p className="text-lg text-muted">No open {game && GAME[game].name} contests. <Link href="/games" className="text-text underline underline-offset-4">See every game</Link>.</p>
